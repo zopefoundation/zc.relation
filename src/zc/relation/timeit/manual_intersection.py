@@ -64,15 +64,12 @@ manual_template = 'BTrees.family32.IO.TreeSet(i for i in %s if i in %s)'
 
 intersect_template = 'BTrees.family32.IO.intersection(%s, %s)'
 
-
-control = timeit.Timer('pass', setup)
-
 options = ('one', 'ten', 'hundred', 'thousand', 'tenthousand')
 
 runs = 10000
 
-control_result = min(timeit.Timer('pass', setup).repeat(3, runs))
-
+control = timeit.Timer('pass', setup)
+control_result = min(control.repeat(3, runs))
 d = [('control_result', control_result)]
 
 for i, big in enumerate(options):
