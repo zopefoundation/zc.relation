@@ -26,4 +26,5 @@ setup(
         
         'zope.testing',
         ],
+    extras_require={'test':'zc.relationship'},
     )
