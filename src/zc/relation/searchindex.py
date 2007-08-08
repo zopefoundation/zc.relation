@@ -34,16 +34,12 @@ class TransposingTransitive(persistent.Persistent):
 
     name = index = catalog = None
 
-    def __init__(self, forward, reverse, static=(), names=()):
+    def __init__(self, forward, reverse, names=()):
         # normalize
-        if getattr(static, 'items', None) is not None:
-            static = static.items()
-        self.static = tuple(sorted(static))
         self.names = BTrees.family32.OO.Bucket([(nm, None) for nm in names])
         self.forward = forward
         self.reverse = reverse
-        self.update = frozenset(
-            itertools.chain((k for k, v in static), (forward, reverse)))
+        self.update = frozenset((forward, reverse))
         self.factory = zc.relation.queryfactory.TransposingTransitive(
             forward, reverse)
 
@@ -61,7 +57,6 @@ class TransposingTransitive(persistent.Persistent):
         new.forward = self.forward
         new.reverse = self.reverse
         new.factory = self.factory
-        new.static = self.static
         if self.index is not None:
             if catalog is None:
                 catalog = self.catalog
@@ -89,16 +84,10 @@ class TransposingTransitive(persistent.Persistent):
             if token not in self.index:
                 self._index(token)
         # name, query_names, static_values, maxDepth, filter, queryFactory
-        query_names = (self.forward,) + tuple(k for k, v in self.static)
-        res = [(None, query_names, self.static, None, None, self.factory)]
+        res = [(None, (self.forward,), (), None, None, self.factory)]
         for nm in self.names:
             res.append(
-                (nm, query_names, self.static, None, None, self.factory))
-        return res
-
-    def _buildQuery(self, dynamic):
-        res = BTrees.family32.OO.Bucket(self.static)
-        res[dynamic] = None
+                (nm, (self.forward,), (), None, None, self.factory))
         return res
 
     def _index(self, token, removals=None, remove=False):
@@ -106,7 +95,7 @@ class TransposingTransitive(persistent.Persistent):
         if removals and self.forward in removals:
             starts.update(t for t in removals[self.forward] if t is not None)
         tokens = set()
-        reverseQuery = self._buildQuery(self.reverse)
+        reverseQuery = BTrees.family32.OO.Bucket(((self.reverse, None),))
         for token in starts:
             getQueries = self.factory(dict(reverseQuery), self.catalog)
             tokens.update(chain[-1] for chain in
@@ -125,7 +114,7 @@ class TransposingTransitive(persistent.Persistent):
         # now we go back and try to fill them back in again.  If there had
         # been a cycle, we can see now that we have to work down.
         relTools = self.catalog.getRelationModuleTools()
-        query = self._buildQuery(self.forward)
+        query = BTrees.family32.OO.Bucket(((self.forward, None),))
         getQueries = self.factory(query, self.catalog)
         for token in tokens:
             if token in self.index: # must have filled it in during a cycle
@@ -222,10 +211,6 @@ class TransposingTransitive(persistent.Persistent):
     # end listener interface
 
     def getResults(self, name, query, maxDepth, filter, queryFactory):
-        for k, v in self.static:
-            if query[k] != v:
-                return
-        # TODO: try to use intransitive index, if available
         rels = self.catalog.getRelationTokens(query)
         if name is None:
             tools = self.catalog.getRelationModuleTools()
