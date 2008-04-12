@@ -110,11 +110,11 @@ should be used to hold the tokens.
     >>> catalog = zc.relation.catalog.Catalog(dumpEmployees, loadEmployees,
     ...                               relFamily=BTrees.family32.OI)
 
-[#verifyObjectICatalog]_ [#legacy]_ We can't do very much searching with it so far though,
-because the catalog doesn't have any indexes.  In this example, the
-relationship itself represents the employee, so we won't need to index
-that separately.  But we do need a way to tell the catalog how to find
-the other end of the relationship, the supervisor.
+[#verifyObjectICatalog]_ [#legacy]_ We can't do very much searching with it so
+far though, because the catalog doesn't have any indexes. In this example, the
+relationship itself represents the employee, so we won't need to index that
+separately. But we do need a way to tell the catalog how to find the other end
+of the relationship, the supervisor.
 
 You can specify this to the catalog with a zope.interface attribute or
 method, or with a callable.  We'll use a callable for now.  It takes the
@@ -124,12 +124,16 @@ indexed relationship and the catalog for context.
     ...     return emp.supervisor # None or another employee
     ...
 
-Then we'll use that to tell the catalog to add an index for
-`supervisor`.  We'll also specify how to tokenize and store those
-values: in this case, the same way as the relations themselves.  We
-could also specify the name to call the index, but it will default to
-the __name__ of the function (or interface element), which will work
-just fine for us now.
+Then we'll use that to tell the catalog to add an index for `supervisor`.
+
+We'll also specify how to tokenize (dump and load) those values. In this case,
+we're able to use the same functions as the relations themselves. However, do
+note that we can specify a completely different way to dump and load for each
+"value index," or relation element.
+
+We could also specify the name to call the index, but it will default to the
+__name__ of the function (or interface element), which will work just fine for
+us now.
 
     >>> catalog.addValueIndex(supervisor, dumpEmployees, loadEmployees,
     ...                       btree=BTrees.family32.OI)
@@ -231,8 +235,8 @@ tokens rather than objects.
     ...     {'supervisor': zc.relation.catalog.any('Diane', 'Chuck')}))
     ['Frank', 'Galyn', 'Howie']
 
-`findValues` and the `None` query key
--------------------------------------
+`findValues` and the `RELATION` query key
+-----------------------------------------
 
 So how do we find who an employee's supervisor is?  Well, in this case,
 look at the attribute on the employee!  If you can use an attribute that
@@ -265,23 +269,30 @@ names of the indexes to search.  However, in this case, we don't want to
 search one or more indexes for matching relationships, as usual, but
 actually specify a relationship: Howie.
 
-We do not have an index name.  The key, then, is `None`: no index name,
-just relationship tokens.  For our current example, that would mean the
-query is `{None: 'Howie'}`.
+We do not have a value index name: we are looking for a relation. The key is
+the constant `zc.relation.RELATION`. For our current example, that would mean
+the query is `{zc.relation.RELATION: 'Howie'}`.
 
-    >>> list(catalog.findValues('supervisor', {None: 'Howie'}))[0]
+    >>> import zc.relation
+    >>> list(catalog.findValues(
+    ...     'supervisor', {zc.relation.RELATION: 'Howie'}))[0]
     <Employee instance "Diane">
 
 Congratulations, you just found an obfuscated and comparitively
 inefficient way to write `howie.supervisor`! [#intrinsic_search]_
 [#findValuesExceptions]_
 
-Slightly more usefully, you can use other query keys along with None.
+Slightly more usefully, you can use other query keys along with
+zc.relation.RELATION. This asks, "Of Betty, Alice, and Frank, who are
+supervised by Alice?"
     
     >>> sorted(catalog.findRelationTokens(
-    ...     {None: zc.relation.catalog.any('Betty', 'Alice', 'Chuck'),
+    ...     {zc.relation.RELATION: zc.relation.catalog.any(
+    ...         'Betty', 'Alice', 'Frank'),
     ...      'supervisor': 'Alice'}))
-    ['Betty', 'Chuck']
+    ['Betty']
+
+Only Betty is.
 
 Transitive Searching, Query Factories, and `maxDepth`
 ----------------------------------------------------------------
@@ -299,15 +310,15 @@ it the two query names it should transpose for walking in either
 direction.
 
 For instance, here we just want to tell the factory to transpose the two
-keys we've used, None and 'supervisor'.  Let's make a factory, use it
-in a query for a couple of transitive searches, and then, if you want,
+keys we've used, zc.relation.RELATION and 'supervisor'. Let's make a factory,
+use it in a query for a couple of transitive searches, and then, if you want,
 you can read through a footnote to talk through what is happening.
 
 Here's the factory.
 
     >>> import zc.relation.queryfactory
     >>> factory = zc.relation.queryfactory.TransposingTransitive(
-    ...     None, 'supervisor')
+    ...     zc.relation.RELATION, 'supervisor')
 
 Now `factory` is just a callable.  Let's let it help answer a couple of
 questions.
@@ -315,7 +326,7 @@ questions.
 Who are all of Howie's supervisors transitively (this looks up in the
 diagram)?
 
-    >>> list(catalog.findValues('supervisor', {None: 'Howie'},
+    >>> list(catalog.findValues('supervisor', {zc.relation.RELATION: 'Howie'},
     ...      queryFactory=factory))
     ... # doctest: +NORMALIZE_WHITESPACE
     [<Employee instance "Diane">, <Employee instance "Betty">,
@@ -343,7 +354,7 @@ queries using `addDefaultQueryFactory`.
 
 Now all searches are transitive by default.
 
-    >>> list(catalog.findValues('supervisor', {None: 'Howie'}))
+    >>> list(catalog.findValues('supervisor', {zc.relation.RELATION: 'Howie'}))
     ... # doctest: +NORMALIZE_WHITESPACE
     [<Employee instance "Diane">, <Employee instance "Betty">,
      <Employee instance "Alice">]
@@ -356,7 +367,8 @@ Now all searches are transitive by default.
 We can force a non-transitive search, or a specific search depth, with
 maxDepth [#needs_a_transitive_queries_factory]_.
 
-    >>> list(catalog.findValues('supervisor', {None: 'Howie'}, maxDepth=1))
+    >>> list(catalog.findValues(
+    ...     'supervisor', {zc.relation.RELATION: 'Howie'}, maxDepth=1))
     [<Employee instance "Diane">]
     >>> sorted(catalog.findRelations({'supervisor': 'Betty'}, maxDepth=1))
     [<Employee instance "Diane">, <Employee instance "Edgar">]
@@ -382,7 +394,7 @@ chain"?  In this API, it is a transitive path of relations.  For
 instance, what's the chain of command above Howie?  `findRelationChains`
 will return each unique path.
 
-    >>> list(catalog.findRelationChains({None: 'Howie'}))
+    >>> list(catalog.findRelationChains({zc.relation.RELATION: 'Howie'}))
     ... # doctest: +NORMALIZE_WHITESPACE
     [(<Employee instance "Howie">,),
      (<Employee instance "Howie">, <Employee instance "Diane">),
@@ -412,7 +424,7 @@ chain for each supervised employee, because it shows all possible paths.
      (<Employee instance "Chuck">, <Employee instance "Galyn">)]
 
 That's all the paths--all the chains--from Alice.  We sorted the results,
-but normaly they would be breadth first.
+but normally they would be breadth first.
 
 But what if we wanted to just find the paths from one query result to
 another query result--say, we wanted to know the chain of command from Alice
@@ -420,7 +432,8 @@ down to Howie?  Then we can specify a `targetQuery` that specifies the
 characteristics of our desired end point (or points).
 
     >>> list(catalog.findRelationChains(
-    ...     {'supervisor': 'Alice'}, targetQuery={None: 'Howie'}))
+    ...     {'supervisor': 'Alice'},
+    ...     targetQuery={zc.relation.RELATION: 'Howie'}))
     ... # doctest: +NORMALIZE_WHITESPACE
     [(<Employee instance "Betty">, <Employee instance "Diane">,
       <Employee instance "Howie">)]
@@ -511,10 +524,10 @@ searches seen above that specify a 'supervisor'.
     >>> import zc.relation.searchindex
     >>> catalog.addSearchIndex(
     ...     zc.relation.searchindex.TransposingTransitive(
-    ...         'supervisor', None))
+    ...         'supervisor', zc.relation.RELATION))
 
-The `None` describes how to walk back up the chain.  Search indexes are 
-explained in reasonable detail in searchindex.txt.
+The ``zc.relation.RELATION`` describes how to walk back up the chain. Search
+indexes are explained in reasonable detail in searchindex.txt.
 
 Now that we have added the index, we can search again.  The result this
 time is already computed, so, at least when you ask for tokens, it
@@ -573,13 +586,14 @@ for tokens, just so that the result is smaller to look at.) [#same_set]_
 
 If we ask for the supervisors of Frank, it will include Betty.
 
-    >>> list(catalog.findValueTokens('supervisor', {None: 'Frank'}))
+    >>> list(catalog.findValueTokens(
+    ...     'supervisor', {zc.relation.RELATION: 'Frank'}))
     ['Chuck', 'Alice', 'Zane', 'Betty']
 
 Paths returned by `findRelationChains` are marked with special interfaces, and
 special metadata, to show the chain.
 
-    >>> res = list(catalog.findRelationChains({None: 'Frank'}))
+    >>> res = list(catalog.findRelationChains({zc.relation.RELATION: 'Frank'}))
     >>> len(res)
     5
     >>> import zc.relation.interfaces
@@ -607,14 +621,14 @@ cycled relation.
     >>> list(catalog.findRelations(res[4].cycled[0], maxDepth=1))
     [<Employee instance "Alice">]
 
-
 To remove this craziness [#reverse_lookup]_, we can unindex Zane, and change
 and reindex Alice.
 
     >>> a.supervisor = None
     >>> catalog.index(a)
 
-    >>> list(catalog.findValueTokens('supervisor', {None: 'Frank'}))
+    >>> list(catalog.findValueTokens(
+    ...     'supervisor', {zc.relation.RELATION: 'Frank'}))
     ['Chuck', 'Alice']
 
     >>> catalog.unindex(z)
@@ -656,29 +670,31 @@ end of a path, use `targetQuery`.
 
 Is Alice a supervisor of Howie?
 
-    >>> catalog.canFind({'supervisor': 'Alice'}, targetQuery={None: 'Howie'})
+    >>> catalog.canFind({'supervisor': 'Alice'},
+    ...                 targetQuery={zc.relation.RELATION: 'Howie'})
     True
 
 Is Chuck a supervisor of Howie?
 
-    >>> catalog.canFind({'supervisor': 'Chuck'}, targetQuery={None: 'Howie'})
+    >>> catalog.canFind({'supervisor': 'Chuck'},
+    ...                 targetQuery={zc.relation.RELATION: 'Howie'})
     False
 
 Is Howie Alice's employee?
 
-    >>> catalog.canFind({None: 'Howie'}, targetQuery={'supervisor': 'Alice'})
+    >>> catalog.canFind({zc.relation.RELATION: 'Howie'},
+    ...                 targetQuery={'supervisor': 'Alice'})
     True
 
 Is Howie Chuck's employee?
 
-    >>> catalog.canFind({None: 'Howie'}, targetQuery={'supervisor': 'Chuck'})
+    >>> catalog.canFind({zc.relation.RELATION: 'Howie'},
+    ...                 targetQuery={'supervisor': 'Chuck'})
     False
 
 (Note that, if your relations describe a hierarchy, searching up a
 hierarchy is usually more efficient, so the second pair of questions is
-generally preferable to the first in that case.  However, if you install
-a search index for either direction of the query, `canFind` can use
-it efficiently either way)
+generally preferable to the first in that case.)
 
 Conclusion
 ==========
@@ -734,13 +750,13 @@ then look at where you can go from here.
   methods are `findRelationTokens`, `findValueTokens`, and
   `findRelationTokenChains`.
 
-- Queries are formed with dicts.  The keys are the names of the
-  indexes you want to search, or, for the special case of precise
-  relationships, None. The values are the tokens of the results you
-  want to match; or None, indicating relations that have None as a
-  value (or no values, if it is a multiple).  Search values can use
-  zc.relation.catalog.any or zc.relation.catalog.Any to specify
-  multiple (non-None) results to match for a given key.
+- Queries are formed with dicts. The keys are the names of the indexes you want
+  to search, or, for the special case of precise relations,
+  zc.relation.RELATION. The values are the tokens of the results you want to
+  match; or None, indicating relations that have None as a value (or no values,
+  if it is a multiple). Search values can use zc.relation.catalog.any or
+  zc.relation.catalog.Any to specify multiple (non-None) results to match for a
+  given key.
 
 As you can tell by the holes we mentioned in the overview, there's more
 to cover.  Hopefully, this will be enough to get your feet wet, though,
@@ -752,22 +768,20 @@ Next Steps
 If you want to read more, next steps depend on how you like to learn.  Here
 are some of the other documents in the zc.relation package.
 
+:optimization.txt:
+    Best practices for optimizing your use of the relation catalog.
+
+:searchindex.txt:
+    Queries factories and search indexes: from basics to nitty gritty details.
+
 :tokens.txt:
     This document explores the details of tokens.  All God's chillun
     love tokens, at least if God's chillun are writing non-toy apps
     using zc.relation.  It includes discussion of the token helpers that
     the catalog provides, how to use zope.app.intid-like registries with
     zc.relation, how to use tokens to "join" query results reasonably
-    efficiently, and how to index joins.
-
-:searchindex.txt:
-    Queries factories and search indexes: from basics to nitty gritty details.
-
-:optimization.txt:
-    Best practices for optimizing your use of the relation catalog.
-
-:administration.txt:
-    Managing indexes and listeners.
+    efficiently, and how to index joins.  It also is unnecessarily
+    mind-blowing because of the examples used.
 
 :interfaces.py:
     The contract, for nuts and bolts.
@@ -862,15 +876,16 @@ directory, which holds scripts I ran to test assumptions and learn.
 
 .. [#intrinsic_search] Here's the same with token results.
 
-    >>> list(catalog.findValueTokens('supervisor', {None: 'Howie'}))
+    >>> list(catalog.findValueTokens('supervisor',
+    ...                              {zc.relation.RELATION: 'Howie'}))
     ['Diane']
     
     While we're down here in the footnotes, I'll mention that you can
     search for relations that haven't been indexed.
 
-    >>> list(catalog.findRelationTokens({None: 'Ygritte'}))
+    >>> list(catalog.findRelationTokens({zc.relation.RELATION: 'Ygritte'}))
     []
-    >>> list(catalog.findRelations({None: 'Ygritte'}))
+    >>> list(catalog.findRelations({zc.relation.RELATION: 'Ygritte'}))
     []
 
 .. [#findValuesExceptions] If you use findValues or findValueTokens and try
@@ -897,12 +912,12 @@ directory, which holds scripts I ran to test assumptions and learn.
     OK, the next part is where your brain hurts.  Hang on.
     
     In our case, the factory sees that the query was for supervisor. Its
-    other key, the one it transposes with, is None.  *The factory gets
-    the transposing key's result for the current token.*  So, for us, a
-    key of None is actually a no-op: the result *is* the current
-    token, Diane.  Then, the factory has its answer: replace the old value
-    of supervisor in the query, Betty, with the result, Diane.  The next
-    transitive query should be {'supervisor', 'Diane'}.  Ta-da.
+    other key, the one it transposes with, is zc.relation.RELATION. *The
+    factory gets the transposing key's result for the current token.* So, for
+    us, a key of zc.relation.RELATION is actually a no-op: the result *is* the
+    current token, Diane. Then, the factory has its answer: replace the old
+    value of supervisor in the query, Betty, with the result, Diane. The next
+    transitive query should be {'supervisor', 'Diane'}. Ta-da.
 
 .. [#needs_a_transitive_queries_factory] A search with a maxDepth > 1 but
     no queryFactory raises an error.
@@ -930,13 +945,13 @@ directory, which holds scripts I ran to test assumptions and learn.
 
 .. [#filter] For instance:
 
-    >>> list(catalog.findRelationTokens({'supervisor': 'Alice'},
-    ...                                 targetFilter=female_filter,
-    ...                                 targetQuery={None: 'Galyn'}))
+    >>> list(catalog.findRelationTokens(
+    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
+    ...     targetQuery={zc.relation.RELATION: 'Galyn'}))
     ['Galyn']
-    >>> list(catalog.findRelationTokens({'supervisor': 'Alice'},
-    ...                                 targetFilter=female_filter,
-    ...                                 targetQuery={None: 'Not known'}))
+    >>> list(catalog.findRelationTokens(
+    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
+    ...     targetQuery={zc.relation.RELATION: 'Not known'}))
     []
     >>> arbitrary = ['Alice', 'Chuck', 'Betty', 'Galyn']
     >>> def arbitrary_filter(relchain, query, catalog, cache):
