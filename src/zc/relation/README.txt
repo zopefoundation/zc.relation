@@ -687,11 +687,11 @@ affect the results of searches with a queryFactory in ``findRelations``,
 ``findValues``, and the soon-to-be-introduced ``canFind``, but they do not
 affect ``findRelationChains``.
 
-The zc.relation package currently includes two kinds of search indexes,
-one for indexing relation searches and one for indexing value searches.
-They only help for searches with an unlimited maxDepth (the default).
-Other search index implementations and approaches may be added in the
-future.  
+The zc.relation package currently includes two kinds of search indexes, one for
+indexing transitive membership searches in a hierarchy and one very
+experimental one explored in tokens.txt in this package (which can effectively
+change the meaning of an intransitive search). Other search index
+implementations and approaches may be added in the future. 
 
 Here's a very brief example of adding a search index for the transitive
 searches seen above that specify a 'supervisor'.
@@ -877,7 +877,7 @@ Working with More Complex Relations
 So far, our examples have used a simple relation, in which the indexed object
 is one end of the relation, and the indexed value on the object is the other.
 This example has let us look at all of the basic zc.relation catalog
-functionality available without .
+functionality.
 
 As mentioned in the introduction, though, the catalog supports, and was
 designed for, more complex relations.  This section will quickly examine a
