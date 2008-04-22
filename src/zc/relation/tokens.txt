@@ -159,17 +159,17 @@ Let's add a couple of search indexes in too, of the hierarchy looking up...
 
     >>> import zc.relation.searchindex
     >>> catalog.addSearchIndex(
-    ...     zc.relation.searchindex.TransposingTransitive(
+    ...     zc.relation.searchindex.TransposingTransitiveMembership(
     ...         'part', None))
 
 ...and down.
 
     >>> catalog.addSearchIndex(
-    ...     zc.relation.searchindex.TransposingTransitive(
+    ...     zc.relation.searchindex.TransposingTransitiveMembership(
     ...         None, 'part'))
 
-(These search indexes are a bit gratuitous, especially looking up, but they
-are examples [#verifyObjectTransitive]_.)
+PLEASE NOTE: the search index looking up is not a good idea practically.  The
+index is designed for looking down [#verifyObjectTransitive]_.
 
 Let's create and add a few organizations.
 
@@ -1040,8 +1040,8 @@ TODO make sure that intransitive copy looks the way we expect
     >>> import transaction
     >>> transaction.commit()
 
-.. [#verifyObjectTransitive] The TransposingTransitive indexes provide
-    ISearchIndex.
+.. [#verifyObjectTransitive] The TransposingTransitiveMembership indexes
+    provide ISearchIndex.
     
     >>> from zope.interface.verify import verifyObject
     >>> import zc.relation.interfaces

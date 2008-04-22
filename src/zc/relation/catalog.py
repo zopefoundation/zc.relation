@@ -117,7 +117,12 @@ class Catalog(persistent.Persistent):
     _listeners = _queryFactories = _searchIndexes = ()
     _searchIndexMatches = None
 
-    def __init__(self, dumpRel, loadRel, relFamily=None, family=None):
+    def __init__(self, dump, load, btree=None, family=None):
+        # instantiate with instructions on how to dump and load relations,
+        # and optionally the btree module for relations.  ``family`` should
+        # either be BTrees.family32 or BTrees.family64, and will be ignored
+        # if ``btree`` is always specified.  (Otherwise, it will make btree
+        # default to family.IF for relations and value indexes.)
         if family is not None:
             self.family = family
         else:
@@ -126,11 +131,11 @@ class Catalog(persistent.Persistent):
         # held mappings are objtoken to (relcount, relset)
         self._EMPTY_name_TO_relcount_relset = family.OO.BTree()
         self._reltoken_name_TO_objtokenset = family.OO.BTree()
-        if relFamily is None:
-            relFamily = family.IF
-        self._relTools = getModuleTools(relFamily)
-        self._relTools['load'] = loadRel
-        self._relTools['dump'] = dumpRel
+        if btree is None:
+            btree = family.IF
+        self._relTools = getModuleTools(btree)
+        self._relTools['load'] = load
+        self._relTools['dump'] = dump
         self._relLength = BTrees.Length.Length()
         self._relTokens = self._relTools['TreeSet']()
         # private; only mutate via indexValue and unindexValue
@@ -200,11 +205,6 @@ class Catalog(persistent.Persistent):
         res._attrs = self.family.OO.Bucket(
             [(k, self.family.OO.Bucket(v)) for k, v in self._attrs.items()])
         res._relTools = dict(self._relTools)
-        res._listeners = () # TODO document that listeners are not copied
-        # (rationale: they need to have ``sourceAdded`` called with the
-        # catalog, and we don't know the semantics of any given particular
-        # listener to know if it should be the same object or a copy or nothing
-        # at all. Therefore, we do not include listeners in a copy)
         res._queryFactories = self._queryFactories # it's a tuple
         res._relLength = BTrees.Length.Length()
         res._relLength.set(self._relLength.value)
@@ -212,7 +212,7 @@ class Catalog(persistent.Persistent):
             indexes = []
             res._searchIndexMatches = self.family.OO.Bucket()
             for ix, keys in self._searchIndexes:
-                cix = ix.copy(self)
+                cix = ix.copy(res)
                 indexes.append((cix, keys))
                 for key in keys:
                     dest = res._searchIndexMatches.get(key)
@@ -223,6 +223,8 @@ class Catalog(persistent.Persistent):
                         if info[3] is ix:
                             dest.append(info[:3] + (cix,))
             res._searchIndexes = tuple(indexes)
+        for l in self._listeners:
+            cl = l.sourceCopied(self, res)
         return res
     
     # Value Indexes
@@ -386,13 +388,20 @@ class Catalog(persistent.Persistent):
                 rel_bool = True
             else:
                 rel_bool = False
-            query_names_res = []
+            query_names_res = BTrees.family32.OO.Set() # sorts
             relation_query = False
             for nm in query_names:
                 if nm is RELATION:
                     relation_query = True
                 else:
-                    query_names_res.append(nm)
+                    query_names_res.insert(nm)
+            if getattr(static_values, 'items', None) is not None:
+                static_values = static_values.items()
+            for k, v in static_values:
+                if k is RELATION:
+                    raise ValueError(
+                        'may not register static value for RELATION (None)')
+                query_names_res.insert(k)
             if maxDepth is None:
                 maxDepth = 0
             k = (rel_bool, name, relation_query,
@@ -401,8 +410,6 @@ class Catalog(persistent.Persistent):
             if a is None:
                 self._searchIndexMatches[
                     k] = a = persistent.list.PersistentList()
-            if getattr(static_values, 'items', None) is not None:
-                static_values = static_values.items()
             a.append((filter, queryFactory, tuple(static_values), ix))
             keys.add(k)
         keys = frozenset(keys)
@@ -609,7 +616,14 @@ class Catalog(persistent.Persistent):
     # Tokenization
     # ============
 
-    def tokenizeQuery(self, query):
+    def tokenizeQuery(self, *args, **kwargs):
+        if args:
+            if kwargs or len(args) > 1:
+                raise TypeError(
+                    'supply a query dictionary or keyword arguments, not both')
+            query = args[0]
+        else:
+            query = kwargs
         res = {}
         for k, v in query.items():
             if k is RELATION:
@@ -626,7 +640,14 @@ class Catalog(persistent.Persistent):
             res[k] = v
         return res
 
-    def resolveQuery(self, query):
+    def resolveQuery(self, *args, **kwargs):
+        if args:
+            if kwargs or len(args) > 1:
+                raise TypeError(
+                    'supply a query dictionary or keyword arguments, not both')
+            query = args[0]
+        else:
+            query = kwargs
         res = {}
         for k, v in query.items():
             if k is RELATION:
@@ -738,7 +759,7 @@ class Catalog(persistent.Persistent):
                 c_queryFactory != queryFactory):
                 continue
             for k, v in c_static_values:
-                if query[k] != v:
+                if query[k] != v: # we want a precise match here
                     continue
             res = ix.getResults(
                 None, query, maxDepth, filter, queryFactory)
@@ -891,11 +912,11 @@ class Catalog(persistent.Persistent):
 
     def findValueTokens(self, name, query=(), maxDepth=None,
                         filter=None, targetQuery=(), targetFilter=None,
-                        queryFactory=None):
+                        queryFactory=None, ignoreSearchIndex=False):
         data = self._attrs.get(name)
         if data is None:
             raise ValueError('name not indexed', name)
-        query = BTrees.family32.OO.Bucket(query)
+        query = BTrees.family32.OO.Bucket(query) # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(
@@ -925,7 +946,7 @@ class Catalog(persistent.Persistent):
                 return multiunion(
                     (self._reltoken_name_TO_objtokenset.get((r, name))
                      for r in rels), data)
-        if self._searchIndexMatches is not None:
+        if not ignoreSearchIndex and self._searchIndexMatches is not None:
             if RELATION in query:
                 relation_query = True
                 query_names = tuple(nm for nm in query if nm is not RELATION)
@@ -965,10 +986,10 @@ class Catalog(persistent.Persistent):
 
     def findValues(self, name, query=(), maxDepth=None, filter=None,
                    targetQuery=(), targetFilter=None,
-                   queryFactory=None):
+                   queryFactory=None, ignoreSearchIndex=False):
         res = self.findValueTokens(name, query, maxDepth, filter,
                                    targetQuery, targetFilter,
-                                   queryFactory)
+                                   queryFactory, ignoreSearchIndex)
         resolve = self._attrs[name]['load']
         if resolve is None:
             return res
@@ -1002,8 +1023,8 @@ class Catalog(persistent.Persistent):
 
     def findRelationTokens(self, query=(), maxDepth=None, filter=None,
                            targetQuery=(), targetFilter=None,
-                           queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query)
+                           queryFactory=None, ignoreSearchIndex=False):
+        query = BTrees.family32.OO.Bucket(query) # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(
@@ -1016,7 +1037,7 @@ class Catalog(persistent.Persistent):
             if res is None:
                 res = self._relTools['Set']()
             return res
-        if self._searchIndexMatches is not None:
+        if not ignoreSearchIndex and self._searchIndexMatches is not None:
             if RELATION in query:
                 relation_query = True
                 query_names = tuple(nm for nm in query if nm is not None)
@@ -1042,16 +1063,16 @@ class Catalog(persistent.Persistent):
 
     def findRelations(self, query=(), maxDepth=None, filter=None,
                           targetQuery=(), targetFilter=None,
-                          queryFactory=None):
+                          queryFactory=None, ignoreSearchIndex=False):
         return self.resolveRelationTokens(
             self.findRelationTokens(
                 query, maxDepth, filter, targetQuery, targetFilter,
-                queryFactory))
+                queryFactory, ignoreSearchIndex))
 
     def findRelationChains(self, query, maxDepth=None, filter=None,
                                targetQuery=(), targetFilter=None,
                                queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query)
+        query = BTrees.family32.OO.Bucket(query) # sorts on key
         queryFactory, getQueries = self._getQueryFactory(
             query, queryFactory)
         return self._yieldRelationChains(*self._parse(
@@ -1078,7 +1099,7 @@ class Catalog(persistent.Persistent):
     def findRelationTokenChains(self, query, maxDepth=None, filter=None,
                                     targetQuery=(), targetFilter=None,
                                     queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query)
+        query = BTrees.family32.OO.Bucket(query) # sorts on key
         queryFactory, getQueries = self._getQueryFactory(
             query, queryFactory)
         return self.yieldRelationTokenChains(*self._parse(
@@ -1087,14 +1108,14 @@ class Catalog(persistent.Persistent):
 
     def canFind(self, query, maxDepth=None, filter=None,
                  targetQuery=(), targetFilter=None,
-                 queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query)
+                 queryFactory=None, ignoreSearchIndex=False):
+        query = BTrees.family32.OO.Bucket(query) # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         targetQuery = BTrees.family32.OO.Bucket(targetQuery)
-        if self._searchIndexMatches is not None:
+        if not ignoreSearchIndex and self._searchIndexMatches is not None:
             if RELATION in query:
                 relation_query = True
                 query_names = tuple(nm for nm in query if nm is not None)

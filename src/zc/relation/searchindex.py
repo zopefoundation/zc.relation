@@ -15,12 +15,26 @@ import zc.relation.searchindex
 
 _marker = object()
 
-class TransposingTransitive(persistent.Persistent):
+class TransposingTransitiveMembership(persistent.Persistent):
     """for searches using zc.relation.queryfactory.TransposingTransitive.
-    
+
     Only indexes one direction.  Only indexes with maxDepth=None.
     Does not support filters.
-    
+
+    This search index's algorithm is intended for transposing transitive
+    searches that look *downward* in a top-down hierarchy. It could be
+    described as indexing transitive membership in a hierarchy--indexing the
+    children of a given node.
+
+    This index can significantly speed transitive membership tests,
+    demonstrating a factor-of-ten speed increase even in a small example.  See
+    timeit/transitive_search_index.py for nitty-gritty details.
+
+    Using it to index the parents in a hierarchy (looking upward) would
+    technically work, but it would result in many writes when a top-level node
+    changed, and would probably not provide enough read advantage to account
+    for the write cost.
+
     This approach could be used for other query factories that only look
     at the final element in the relchain.  If that were desired, I'd abstract
     some of this code.
@@ -29,21 +43,29 @@ class TransposingTransitive(persistent.Persistent):
     the target filter can look at the last element in the relchain, but not
     at the true relchain itself.  That is: the relchain lies, except for the
     last element.
+    
+    The basic index is for relations.  By providing ``names`` to the
+    initialization, the named value indexes will also be included in the
+    transitive search index.
     """
     zope.interface.implements(zc.relation.interfaces.ISearchIndex)
 
     name = index = catalog = None
 
-    def __init__(self, forward, reverse, names=()):
+    def __init__(self, forward, reverse, names=(), static=()):
         # normalize
         self.names = BTrees.family32.OO.Bucket([(nm, None) for nm in names])
         self.forward = forward
         self.reverse = reverse
         self.update = frozenset((forward, reverse))
         self.factory = zc.relation.queryfactory.TransposingTransitive(
-            forward, reverse)
+            forward, reverse, static)
+        for k, v in self.factory.static:
+            if isinstance(v, zc.relation.catalog.Any):
+                raise NotImplementedError(
+                    '``Any`` static values are not supported at this time')
 
-    def copy(self, catalog=None):
+    def copy(self, catalog):
         new = self.__class__.__new__(self.__class__)
         new.names = BTrees.family32.OO.Bucket()
         for nm, val in self.names.items():
@@ -56,10 +78,9 @@ class TransposingTransitive(persistent.Persistent):
             new.names[nm] = val
         new.forward = self.forward
         new.reverse = self.reverse
+        new.update = self.update
         new.factory = self.factory
         if self.index is not None:
-            if catalog is None:
-                catalog = self.catalog
             new.catalog = catalog
             new.index = zc.relation.catalog.getMapping(
                 self.catalog.getRelationModuleTools())()
@@ -84,10 +105,12 @@ class TransposingTransitive(persistent.Persistent):
             if token not in self.index:
                 self._index(token)
         # name, query_names, static_values, maxDepth, filter, queryFactory
-        res = [(None, (self.forward,), (), None, None, self.factory)]
+        res = [(None, (self.forward,), self.factory.static, None, None,
+                self.factory)]
         for nm in self.names:
             res.append(
-                (nm, (self.forward,), (), None, None, self.factory))
+                (nm, (self.forward,), self.factory.static, None, None,
+                 self.factory))
         return res
 
     def _index(self, token, removals=None, remove=False):
@@ -95,7 +118,8 @@ class TransposingTransitive(persistent.Persistent):
         if removals and self.forward in removals:
             starts.update(t for t in removals[self.forward] if t is not None)
         tokens = set()
-        reverseQuery = BTrees.family32.OO.Bucket(((self.reverse, None),))
+        reverseQuery = BTrees.family32.OO.Bucket(
+            ((self.reverse, None),) + self.factory.static)
         for token in starts:
             getQueries = self.factory(dict(reverseQuery), self.catalog)
             tokens.update(chain[-1] for chain in
@@ -114,7 +138,8 @@ class TransposingTransitive(persistent.Persistent):
         # now we go back and try to fill them back in again.  If there had
         # been a cycle, we can see now that we have to work down.
         relTools = self.catalog.getRelationModuleTools()
-        query = BTrees.family32.OO.Bucket(((self.forward, None),))
+        query = BTrees.family32.OO.Bucket(
+            ((self.forward, None),) + self.factory.static)
         getQueries = self.factory(query, self.catalog)
         for token in tokens:
             if token in self.index: # must have filled it in during a cycle
@@ -232,6 +257,7 @@ class Intransitive(persistent.Persistent):
     Could be used for transitive searches, but writes would be much more
     expensive than the TransposingTransitive approach.
     
+    see tokens.txt for an example.
     """
     # XXX Rename to Direct?
     zope.interface.implements(
@@ -259,12 +285,9 @@ class Intransitive(persistent.Persistent):
             depths = (1,)
         self.depths = tuple(depths)
 
-
-    def copy(self, catalog=None):
+    def copy(self, catalog):
         res = self.__class__.__new__(self.__class__)
         if self.index is not None:
-            if catalog is None:
-                catalog = self.catalog
             res.catalog = catalog
             res.index = BTrees.family32.OO.BTree()
             for k, v in self.index.items():
@@ -361,6 +384,9 @@ class Intransitive(persistent.Persistent):
         if self.catalog is catalog:
             self.setCatalog(None)
             self.setCatalog(catalog)
+
+    def sourceCopied(self, original, copy):
+        pass
 
     def getQueries(self, token, catalog, additions, removals, removed):
         source = {}

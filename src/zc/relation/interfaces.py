@@ -82,10 +82,16 @@ class IListener(IMessageListener):
         """message: you've been removed as a listener from the given catalog.
         """
 
+    def sourceCopied(original, copy):
+        """message: the given original is making a copy.
+        
+        Can install listeners in the copy, if desired.
+        """
+
 class ISearchIndex(IMessageListener):
 
-    def copy(catalog=None):
-        """return a copy of this index, bound to provided catalog if given"""
+    def copy(catalog):
+        """return a copy of this index, bound to provided catalog."""
 
     def setCatalog(catalog):
         """set the search index to be using the given catalog, return matches.
@@ -249,9 +255,9 @@ class ICatalog(zope.interface.Interface):
         
         TODO: explain. :-/"""
 
-    def findValueTokens(name, query=None, maxDepth=None, filter=None,
-                        targetQuery=None, targetFilter=None,
-                        transitiveQueriesFactory=None):
+    def findValueTokens(
+        name, query=None, maxDepth=None, filter=None, targetQuery=None,
+        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """find token results for searchTerms.
         - name is the index name wanted for results.
         - if query is None (or evaluates to boolean False), returns the
@@ -260,24 +266,32 @@ class ICatalog(zope.interface.Interface):
         Otherwise, same arguments as findRelationChains.
         """
 
-    def findValues(name, query=None, maxDepth=None, filter=None,
-                   targetQuery=None, targetFilter=None,
-                   transitiveQueriesFactory=None):
+    def findValues(
+        name, query=None, maxDepth=None, filter=None, targetQuery=None,
+        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """Like findValueTokens, but resolves value tokens"""
 
-    def findRelations(query): # XXX 
+    def findRelations(
+        query=(), maxDepth=None, filter=None, targetQuery=None,
+        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """Given a single dictionary of {indexName: token}, return an iterable
-        of relations that match the query intransitively"""
+        of relations that match the query"""
 
-    def findRelationTokenChains(query, maxDepth=None, filter=None,
-                                    targetQuery=None, targetFilter=None,
-                                    transitiveQueriesFactory=None):
+    def findRelationTokens(
+        query=(), maxDepth=None, filter=None, targetQuery=None,
+        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+        """Given a single dictionary of {indexName: token}, return an iterable
+        of relation tokens that match the query"""
+
+    def findRelationTokenChains(
+        query, maxDepth=None, filter=None, targetQuery=None, targetFilter=None,
+        queryFactory=None):
         """find tuples of relation tokens for searchTerms.
         - query is a dictionary of {indexName: token}
         - maxDepth is None or a positive integer that specifies maximum depth
           for transitive results.  None means that the transitiveMap will be
           followed until a cycle is detected.  It is a ValueError to provide a
-          non-None depth if transitiveQueriesFactory is None and
+          non-None depth if queryFactory is None and
           index.defaultTransitiveQueriesFactory is None.
         - filter is a an optional callable providing IFilter that determines
           whether relations will be traversed at all.
@@ -288,17 +302,17 @@ class ICatalog(zope.interface.Interface):
         - targetFilter is an optional callable providing IFilter that
           determines whether a given path will be included in results (it will
           still be traversed)
-        - optional transitiveQueriesFactory takes the place of the index's
-          defaultTransitiveQueriesFactory
+        - optional queryFactory takes the place of the index's
+          matching registered queryFactory, if any.
         """
 
-    def findRelationChains(query, maxDepth=None, filter=None,
-                               targetQuery=None, targetFilter=None,
-                               transitiveQueriesFactory=None):
+    def findRelationChains(
+        query, maxDepth=None, filter=None, targetQuery=None, targetFilter=None,
+        queryFactory=None):
         "Like findRelationTokenChains, but resolves relation tokens"
 
     def canFind(query, maxDepth=None, filter=None, targetQuery=None,
-                 targetFilter=None, transitiveQueriesFactory=None):
+                 targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """boolean if there is any result for the given search.
         
         Same arguments as findRelationChains.
