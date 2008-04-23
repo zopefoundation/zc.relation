@@ -24,6 +24,16 @@ constrained tools and APIs. Three such tools are zc.relationship containers,
 plone.relations containers, and zc.vault. The documents in the package,
 including this one, describe other possible uses.
 
+History
+=======
+
+This is a refactoring of the ZODB-only parts of the zc.relationship package.
+Specifically, the zc.relation catalog is largely equivalent to the
+zc.relationship index. The index in the zc.relationship 2.x line is an
+almost-completely backwards-compatible wrapper of the zc.relation catalog.
+zc.relationship will continue to be maintained, though active development is
+expected to go into zc.relation.
+
 Setting Up a Relation Catalog
 =============================
 
@@ -1466,7 +1476,7 @@ Conclusion
 Review
 ------
 
-That brings us to the end of our introductory example.  Let's review, and
+That brings us to the end of our introductory examples.  Let's review, and
 then look at where you can go from here.
 
 * Relations are objects with indexed values.

@@ -8,12 +8,11 @@ Working with Search Indexes: zc.relation Catalog Extended Example
 Introduction
 ============
 
-This document assumes you have read the README.txt and the tokens.txt
-documents, and want to learn a bit more by example. In it, we will
-explore a set of relations that demonstrates most of the aspects of
-working with search indexes and listeners.  It will not explain the
-topics that the other documents already addressed.  It also describes
-an advanced use case.
+This document assumes you have read the README.txt document, and want to learn
+a bit more by example. In it, we will explore a set of relations that
+demonstrates most of the aspects of working with search indexes and listeners.
+It will not explain the topics that the other documents already addressed. It
+also describes an advanced use case.
 
 As we have seen in the other documents, the relation catalog supports
 search indexes.  These can return the results of any search, as desired.
@@ -22,7 +21,7 @@ particular searches it claims.
 
 The searchindex module supplies a few search indexes, optimizing
 specified transitive and intransitive searches.  We have seen them working
-in other docuements.  We will examine them more in depth in this document.
+in other documents.  We will examine them more in depth in this document.
 
 Search indexes update themselves by receiving messages via a "listener"
 interface.  We will also look at how this works.
@@ -195,6 +194,10 @@ That's all we'll do now.
     ...         'token', 'children', names=('children',)))
 
 Now we should have a search index installed.
+
+Notice that we went from parent (token) to child: this index is primarily
+designed for helping transitive membership searches in a hierarchy. Using it to
+index parents would incur a lot of write expense for not much win.
 
 There's just a bit more you can specify here: static fields for a query
 to do a bit of filtering.  We don't need any of that for this example.
