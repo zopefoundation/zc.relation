@@ -11,7 +11,7 @@ f.close()
 
 setup(
     name="zc.relation",
-    version="1.0b1",
+    version="1.0",
     packages=find_packages('src'),
     include_package_data=True,
     package_dir= {'':'src'},
@@ -19,8 +19,8 @@ setup(
     namespace_packages=['zc'],
 
     zip_safe=False,
-    author='Zope Project',
-    author_email='zope3-dev@zope.org',
+    author='Gary Poster',
+    author_email='gary@zope.com',
     description=open("README.txt").read(),
     long_description=long_description,
     license='ZPL 2.1',
