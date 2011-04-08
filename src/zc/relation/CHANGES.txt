@@ -1,3 +1,10 @@
+======
+Issues
+======
+
+- Tests are currently broken. Do neither run on Python 2.4, 2.5 nor 2.6.
+
+
 =======
 Changes
 =======
@@ -10,7 +17,7 @@ represents a refactoring of another package, zc.relationship.  This
 package contains only a modified version of the relation(ship) index,
 now called a catalog. The refactored version of zc.relationship index
 relies on (subclasses) this catalog. zc.relationship also maintains a
-backwards-compatible subclass.  
+backwards-compatible subclass.
 
 This package only relies on the ZODB, zope.interface, and zope.testing
 software, and can be used inside or outside of a standard ZODB database.
@@ -44,7 +51,7 @@ from the index.  A few other changes are worth your attention.  The
 following list attempts to highlight all incompatibilities.
 
 :Big incompatibilities:
-    
+
     - ``findRelationshipTokenSet`` and ``findValueTokenSet`` are renamed, with
       some slightly different semantics, as ``getRelationTokens`` and
       ``getValueTokens``.  The exact same result as
@@ -63,16 +70,16 @@ following list attempts to highlight all incompatibilities.
 
       * ``load`` and ``dump`` (formerly ``loadRel`` and ``dumpRel``,
         respectively) are now required arguments for instantiation.
-  
+
       * The only other optional arguments are ``btree`` (was ``relFamily``) and
         ``family``. You now specify what elements to index with
         ``addValueIndex``
-  
+
       * Note also that ``addValueIndex`` defaults to no load and dump function,
         unlike the old instantiation options.
 
     - query factories are different.  See ``IQueryFactory`` in the interfaces.
-    
+
       * they first get (query, catalog, cache) and then return a getQueries
         callable that gets relchains and yields queries; OR None if they
         don't match.
@@ -80,7 +87,7 @@ following list attempts to highlight all incompatibilities.
       * They must also handle an empty relchain.  Typically this should
         return the original query, but may also be used to mutate the
         original query.
-        
+
       * They are no longer thought of as transitive query factories, but as
         general query mutators.
 
