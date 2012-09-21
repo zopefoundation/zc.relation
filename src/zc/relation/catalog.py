@@ -11,14 +11,15 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-import sys
 import copy
+import sys
 
+import BTrees
+import BTrees.check
+import BTrees.Length
 import persistent
 import persistent.list
 import persistent.wref
-import BTrees
-import BTrees.Length
 
 import zope.interface
 import zope.interface.interfaces
@@ -40,7 +41,7 @@ RELATION = None
 #
 
 def multiunion(sets, data):
-    sets = tuple(s for s in sets if s) # bool is appropriate here
+    sets = tuple(s for s in sets if s)  # bool is appropriate here
     if not sets:
         res = data['Set']()
     elif data['multiunion'] is not None:
@@ -218,7 +219,7 @@ class Catalog(persistent.Persistent):
         res._attrs = self.family.OO.Bucket(
             [(k, self.family.OO.Bucket(v)) for k, v in self._attrs.items()])
         res._relTools = dict(self._relTools)
-        res._queryFactories = self._queryFactories # it's a tuple
+        res._queryFactories = self._queryFactories  # it's a tuple
         res._relLength = BTrees.Length.Length()
         res._relLength.set(self._relLength.value)
         if self._searchIndexMatches is not None:
@@ -239,12 +240,12 @@ class Catalog(persistent.Persistent):
         for l in self._listeners:
             cl = l.sourceCopied(self, res)
         return res
-    
+
     # Value Indexes
     # -------------
 
     def _fixLegacyAttrs(self):
-        if isinstance(self._attrs, dict): # legacy
+        if isinstance(self._attrs, dict):  # legacy
             # because _attrs used to be a normal dict
             self._attrs = self.family.OO.Bucket(self._attrs)
 
@@ -252,11 +253,12 @@ class Catalog(persistent.Persistent):
                       multiple=False, name=None):
         if btree is None:
             btree = self.family.IF
-        res = self.family.OO.Bucket(getModuleTools(btree))
-        res['dump'] = dump
-        res['load'] = load
-        res['multiple'] = multiple
-        if (res['dump'] is None) ^ (res['load'] is None):
+        value_index_info = self.family.OO.Bucket(getModuleTools(btree))
+        value_index_info['dump'] = dump
+        value_index_info['load'] = load
+        value_index_info['multiple'] = multiple
+        if (value_index_info['dump'] is None) \
+            ^ (value_index_info['load'] is None):
             raise ValueError(
                 "either both of 'dump' and 'load' must be None, or "
                 "neither")
@@ -266,31 +268,32 @@ class Catalog(persistent.Persistent):
             # family (BTree, TreeSet, Set, Bucket).
         if zope.interface.interfaces.IElement.providedBy(element):
             key = 'element'
-            res['attrname'] = defaultname = element.__name__
-            res['interface'] = element.interface
-            res['call'] = zope.interface.interfaces.IMethod.providedBy(element)
+            value_index_info['attrname'] = defaultname = element.__name__
+            value_index_info['interface'] = element.interface
+            value_index_info['call'] = \
+                zope.interface.interfaces.IMethod.providedBy(element)
         else:
             key = 'callable'
             defaultname = getattr(element, '__name__', None)
         if [d for d in self._attrs.values() if d.get(key) == element]:
             raise ValueError('element already indexed', element)
-        res[key] = element
+        value_index_info[key] = element
         if name is None:
             if defaultname is None:
                 raise ValueError('no name specified')
             name = defaultname
         if name in self._attrs:
             raise ValueError('name already used', name)
-        res['name'] = name
-        self._name_TO_mapping[name] = getMapping(res)()
+        value_index_info['name'] = name
+        self._name_TO_mapping[name] = getMapping(value_index_info)()
         # these are objtoken to (relcount, relset)
-        self._attrs[name] = res
+        self._attrs[name] = value_index_info
         load = self._relTools['load']
         cache = {}
         for token in self._relTokens:
             additions = {}
             additions[name] = (None, self._indexNew(
-                token, load(token, self, cache), res))
+                token, load(token, self, cache), value_index_info))
             for l in self._iterListeners():
                 l.relationModified(token, self, additions, {})
         self._fixLegacyAttrs()
@@ -315,7 +318,7 @@ class Catalog(persistent.Persistent):
 
     # Listeners
     # -----------
-    
+
     def addListener(self, listener, weakref=False):
         res = []
         for item in self._listeners:
@@ -369,7 +372,7 @@ class Catalog(persistent.Persistent):
 
     # DefaultQueryFactories
     # -----------------------
-    
+
     def addDefaultQueryFactory(self, factory):
         if factory in self._queryFactories:
             raise ValueError('factory already registered')
@@ -401,7 +404,7 @@ class Catalog(persistent.Persistent):
                 rel_bool = True
             else:
                 rel_bool = False
-            query_names_res = BTrees.family32.OO.Set() # sorts
+            query_names_res = BTrees.family32.OO.Set()  # sorts
             relation_query = False
             for nm in query_names:
                 if nm is RELATION:
@@ -462,14 +465,14 @@ class Catalog(persistent.Persistent):
     # Top-Level
     # ---------
 
-    def _indexNew(self, token, rel, data):
+    def _indexNew(self, token, rel, value_index_info):
         assert self._reltoken_name_TO_objtokenset.get(
-            (token, data['name']), self) is self
+            (token, value_index_info['name']), self) is self
         values, tokens, optimization = self._getValuesAndTokens(
-            rel, data)
+            rel, value_index_info)
         if optimization and tokens is not None:
-            tokens = data['TreeSet'](tokens)
-        self._add(token, tokens, data['name'], tokens)
+            tokens = value_index_info['TreeSet'](tokens)
+        self._add(token, tokens, value_index_info['name'], tokens)
         return tokens
 
     def index(self, rel):
@@ -510,7 +513,7 @@ class Catalog(persistent.Persistent):
                                 recycle = True
                             else:
                                 len_old = len(oldTokens)
-                                ratio = float(len_old)/len_removed
+                                ratio = float(len_old) / len_removed
                                 recycle = (ratio <= 0.1 or len_old > 500
                                            and ratio < 0.2)
                             if recycle:
@@ -535,8 +538,9 @@ class Catalog(persistent.Persistent):
                 l.relationModified(relToken, self, additions, removals)
         else:
             # new token
-            for data in self._attrs.values():
-                additions[data['name']] = self._indexNew(relToken, rel, data)
+            for value_index_info in self._attrs.values():
+                additions[value_index_info['name']] = self._indexNew(relToken,
+                    rel, value_index_info)
             self._relTokens.insert(relToken)
             self._relLength.change(1)
             for l in self._iterListeners():
@@ -548,12 +552,12 @@ class Catalog(persistent.Persistent):
     def unindex_doc(self, relToken):
         removals = {}
         if relToken in self._relTokens:
-            for data in self._attrs.values():
+            for value_index_info in self._attrs.values():
                 tokens = self._reltoken_name_TO_objtokenset.pop(
-                    (relToken, data['name']))
+                    (relToken, value_index_info['name']))
                 if tokens:
-                    removals[data['name']] = tokens
-                self._remove(relToken, tokens, data['name'])
+                    removals[value_index_info['name']] = tokens
+                self._remove(relToken, tokens, value_index_info['name'])
             self._relTokens.remove(relToken)
             self._relLength.change(-1)
         for l in self._iterListeners():
@@ -576,7 +580,7 @@ class Catalog(persistent.Persistent):
             # None is a marker for no value
             values = (values,)
         optimization = data['dump'] is None and (
-            values is None or 
+            values is None or
             isinstance(values, (
                 data['TreeSet'], data['BTree'], data['Bucket'], data['Set'])))
         if not values:
@@ -611,6 +615,11 @@ class Catalog(persistent.Persistent):
             data[0].change(1)
 
     def _remove(self, relToken, tokens, name):
+        """
+        relToken: The token to remove
+        tokens: the tokens that match for the value index of `name`
+        name: the name of the value index
+        """
         if tokens is None:
             dataset = self._EMPTY_name_TO_relcount_relset
             keys = (name,)
@@ -618,7 +627,11 @@ class Catalog(persistent.Persistent):
             dataset = self._name_TO_mapping[name]
             keys = tokens
         for key in keys:
-            data = dataset[key]
+            try:
+                data = dataset[key]
+            except KeyError:
+                BTrees.check.check(dataset)
+                raise
             data[1].remove(relToken)
             data[0].change(-1)
             if not data[0].value:
