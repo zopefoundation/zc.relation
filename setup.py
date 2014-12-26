@@ -84,8 +84,7 @@ setup(
     author_email='gary@zope.com',
     description=text("README.txt"),
     long_description=text('src/zc/relation/README.txt',
-                          'src/zc/relation/CHANGES.txt',
-                          out=True),
+                          'src/zc/relation/CHANGES.txt'),
     license='ZPL 2.1',
     keywords="zope zope3",
     install_requires=[
