@@ -11,8 +11,14 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+from logging import getLogger
+from setuptools import find_packages
+from setuptools import setup
+
 import os
-from setuptools import setup, find_packages
+
+
+logger = getLogger(__name__)
 
 # generic helpers primarily for the long_description
 try:
@@ -24,13 +30,13 @@ except ImportError:
 else:
     import docutils.utils
     import docutils.parsers.rst
-    import StringIO
+    from io import StringIO
     def validateReST(text):
         doc = docutils.utils.new_document('validator')
         # our desired settings
         doc.reporter.halt_level = 5
         doc.reporter.report_level = 1
-        stream = doc.reporter.stream = StringIO.StringIO()
+        stream = doc.reporter.stream = StringIO()
         # docutils buglets (?)
         doc.settings.tab_width = 2
         doc.settings.pep_references = doc.settings.rfc_references = False
@@ -65,7 +71,7 @@ def text(*args, **kwargs):
         f.close()
         report = validateReST(res)
         if report:
-            print report
+            logger.error(report)
             raise ValueError('ReST validation error')
     return res
 # end helpers; below this line should be code custom to this package

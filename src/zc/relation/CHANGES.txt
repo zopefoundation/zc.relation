@@ -13,7 +13,8 @@ Changes
 1.1 (unreleased)
 ================
 
-- Python 3 compatibility: use the implementer decorator
+- Python 3 compatibility: use the implementer decorator,
+  fix print statement and StringIO in setup.py
   [ale-rt]
 
 
