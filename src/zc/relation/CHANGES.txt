@@ -9,6 +9,14 @@ Issues
 Changes
 =======
 
+
+1.1 (unreleased)
+================
+
+- Python 3 compatibility: use the implementer decorator
+  [ale-rt]
+
+
 1.0 (2008-04-23)
 ================
 

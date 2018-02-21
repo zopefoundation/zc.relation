@@ -140,7 +140,7 @@ context; and a dict cache, for optimizations of subsequent calls.
 
 You might have noticed in our ``Employee.__init__`` that we keep a mapping
 of name to object in the ``employees`` global dict (defined right above
-the class definition).  We'll use that for resolving the tokens.  
+the class definition).  We'll use that for resolving the tokens.
 
     >>> def loadEmployees(token, catalog, cache):
     ...     return employees[token]
@@ -217,7 +217,7 @@ Now we have an index [#addValueIndexExceptions]_.
 Adding Relations
 ----------------
 
-Now let's create a few employees.  All but one will have supervisors. 
+Now let's create a few employees.  All but one will have supervisors.
 If you recall our toy ``Employee`` class, the first argument to the
 constructor is the employee name (and therefore the token), and the
 optional second argument is the supervisor.
@@ -294,12 +294,12 @@ In this section, we will introduce the following ideas.
 - search methods share the following arguments:
 
   * ``maxDepth``, limiting the transitive depth for searches;
-  
+
   * ``filter``, allowing code to filter transitive paths;
-  
+
   * ``targetQuery``, allowing a query to filter transitive paths on the basis
     of the endpoint;
-  
+
   * ``targetFilter``, allowing code to filter transitive paths on the basis of
     the endpoint; and
 
@@ -350,7 +350,7 @@ Frank, Galyn, and Howie each report to either Diane or Chuck. [#any]_
 
 So how do we find who an employee's supervisor is?  Well, in this case,
 look at the attribute on the employee!  If you can use an attribute that
-will usually be a win in the ZODB.  
+will usually be a win in the ZODB.
 
     >>> h.supervisor
     <Employee instance "Diane">
@@ -367,7 +367,7 @@ However, we will explore the syntax very briefly, because it introduces an
 important pair of search methods, and because it is a stepping stone
 to our first transitive search.
 
-So, o relation catalog, who is Howie's supervisor?  
+So, o relation catalog, who is Howie's supervisor?
 
 To ask this question we want to get the indexed values off of the relations:
 ``findValues``. In its simplest form, the arguments are the index name of the
@@ -395,7 +395,7 @@ inefficient way to write ``howie.supervisor``! [#intrinsic_search]_
 Slightly more usefully, you can use other query keys along with
 zc.relation.RELATION. This asks, "Of Betty, Alice, and Frank, who are
 supervised by Alice?"
-    
+
     >>> sorted(catalog.findRelations(
     ...     {zc.relation.RELATION: zc.relation.catalog.any(
     ...         'Betty', 'Alice', 'Frank'),
@@ -537,7 +537,7 @@ looks down in the diagram)?
 
 Yup, that looks right.  So how did that work?  If you care, read this
 footnote. [#I_care]_
-    
+
 This transitive factory is really the only transitive factory you would
 want for this particular catalog, so it probably is safe to wire it in
 as a default.  You can add multiple query factories to match different
@@ -580,7 +580,7 @@ want to know *how* things are transitively related?
 ------------------------------------------
 
 Another search method, ``findRelationChains``, helps you discover how
-things are transitively related.  
+things are transitively related.
 
 The method name says "find relation chains".  But what is a "relation
 chain"?  In this API, it is a transitive path of relations.  For
@@ -710,7 +710,7 @@ indexing transitive membership searches in a hierarchy and one for intransitive
 searches explored in tokens.txt in this package, which can optimize frequent
 searches on complex queries or can effectively change the meaning of an
 intransitive search. Other search index implementations and approaches may be
-added in the future. 
+added in the future.
 
 Here's a very brief example of adding a search index for the transitive
 searches seen above that specify a 'supervisor'.
@@ -796,7 +796,7 @@ and special metadata, to show the chain.
     [False, False, False, False, True]
 
 Here's the last chain:
-    
+
     >>> res[-1] # doctest: +NORMALIZE_WHITESPACE
     cycle(<Employee instance "Frank">, <Employee instance "Chuck">,
           <Employee instance "Alice">, <Employee instance "Zane">,
@@ -945,8 +945,9 @@ works.
     ...     child = zope.interface.Attribute('the child')
     ...     parents = zope.interface.Attribute('the parents')
     ...
-    >>> class Parentage(object):
-    ...     zope.interface.implements(IParentage)
+    >>> @zope.interface.implementer(IParentage)
+    ... class Parentage(object):
+    ...
     ...     def __init__(self, child, parent1, parent2):
     ...         self.child = child
     ...         self.parents = (parent1, parent2)
@@ -1078,16 +1079,18 @@ abstraction layer so that a different object can have the same identifier.
     ...     def setContext(value):
     ...         'set context'
     ...
-    >>> class Contextual(object):
-    ...     zope.interface.implements(IContextual)
+    >>> @zope.interface.implementer(IContextual)
+    ... class Contextual(object):
+    ...
     ...     _context = None
     ...     def getContext(self):
     ...         return self._context
     ...     def setContext(self, value):
     ...         self._context = value
     ...
-    >>> class Relation(persistent.Persistent):
-    ...     zope.interface.implements(IRelation)
+    >>> @zope.interface.implementer(IRelation)
+    ... class Relation(persistent.Persistent):
+    ...
     ...     def __init__(self, subjects, predicate, objects):
     ...         self.subjects = subjects
     ...         self.predicate = predicate
@@ -1160,7 +1163,7 @@ index them.
     >>> IContextual(rel2).setContext(bakery)
     >>> rel3 = root['rel3'] = Relation((ann,), BUYS, (doughnuts,))
     >>> rel4 = root['rel4'] = Relation((sara,), BUYS, (bistro,))
-    
+
     >>> for r in (rel1, rel2, rel3, rel4):
     ...     catalog.index(r)
     ...
@@ -1216,8 +1219,9 @@ removed value tokens}.
     >>> def pchange(d):
     ...     pprint.pprint(dict(
     ...         (k, v is not None and set(v) or v) for k, v in d.items()))
-    >>> class DemoListener(persistent.Persistent):
-    ...     zope.interface.implements(zc.relation.interfaces.IListener)
+    >>> @zope.interface.implementer(zc.relation.interfaces.IListener)
+    ... class DemoListener(persistent.Persistent):
+    ...
     ...     def relationAdded(self, token, catalog, additions):
     ...         print ('a relation (token %r) was added to %r '
     ...                'with these values:' % (token, catalog))
@@ -1530,23 +1534,23 @@ then look at where you can go from here.
   different values.
 
 * Creating a catalog:
-    
+
     - Relations and their values are stored in the catalog as tokens: unique
       identifiers that you can resolve back to the original value. Integers are
       the most efficient tokens, but others can work fine too.
-    
+
     - Token type determines the BTree module needed.
-    
+
         - If the tokens are 32-bit ints, choose ``BTrees.family32.II``,
           ``BTrees.family32.IF`` or ``BTrees.family32.IO``.
-        
+
         - If the tokens are 64 bit ints, choose ``BTrees.family64.II``,
           ``BTrees.family64.IF`` or ``BTrees.family64.IO``.
-        
+
         - If they are anything else, choose ``BTrees.family32.OI``,
           ``BTrees.family64.OI``, or ``BTrees.family32.OO`` (or
           BTrees.family64.OO--they are the same).
-        
+
       Within these rules, the choice is somewhat arbitrary unless you plan to
       merge these results with that of another source that is using a
       particular BTree module. BTree set operations only work within the same
@@ -1562,14 +1566,14 @@ then look at where you can go from here.
 
     - You add value indexes to relation catalogs to be able to search.  Values
       can be identified to the catalog with callables or interface elements.
-    
+
         - Using interface attributes will cause an attempt to adapt the
           relation if it does not already provide the interface.
-        
+
         - We can use the ``multiple`` argument when defining a value index to
           indicate that the indexed value is a collection.  This defaults to
           False.
-        
+
         - We can use the ``name`` argument when defining a value index to
           specify the name to be used in queries, rather than relying on the
           name of the interface attribute or callable.
@@ -1588,7 +1592,7 @@ then look at where you can go from here.
       relation)`` and ``unindex_doc(relation_token)`` also work.
 
     - The ``clear`` method clears the relations in the catalog.
-    
+
     - The ``copy`` method makes a copy of the current catalog by copying
       internal data structures, rather than reindexing the relations, which can
       be a significant optimization opportunity. This copies value indexes and
@@ -1598,10 +1602,10 @@ then look at where you can go from here.
 * Searching a catalog:
 
     - Queries to the relation catalog are formed with dicts.
-    
+
     - Query keys are the names of the indexes you want to search, or, for the
       special case of precise relations, the ``zc.relation.RELATION`` constant.
-    
+
     - Query values are the tokens of the results you want to match; or
       ``None``, indicating relations that have ``None`` as a value (or an empty
       collection, if it is a multiple). Search values can use
@@ -1611,45 +1615,45 @@ then look at where you can go from here.
     - The index has a variety of methods to help you work with tokens.
       ``tokenizeQuery`` is typically the most used, though others are
       available.
-    
+
     - To find relations that match a query, use ``findRelations`` or
       ``findRelationTokens``.  Calling ``findRelationTokens`` without any
       arguments returns the BTree set of all relation tokens in the catalog.
-    
+
     - To find values that match a query, use ``findValues`` or
       ``findValueTokens``.  Calling ``findValueTokens`` with only the name
       of a value index returns the BTree set of all tokens in the catalog for
       that value index.
-    
+
     - You search transitively by using a query factory. The
       ``zc.relation.queryfactory.TransposingTransitive`` is a good common case
       factory that lets you walk up and down a hierarchy. A query factory can
       be passed in as an argument to search methods as a ``queryFactory``, or
       installed as a default behavior using ``addDefaultQueryFactory``.
-    
+
     - To find how a query is related, use ``findRelationChains`` or
       ``findRelationTokenChains``.
-    
+
     - To find out if a query is related, use ``canFind``.
-    
+
     - Circular transitive relations are handled to prevent infinite loops. They
       are identified in ``findRelationChains`` and ``findRelationTokenChains``
       with a ``zc.relation.interfaces.ICircularRelationPath`` marker interface.
 
     - search methods share the following arguments:
-    
+
       * ``maxDepth``, limiting the transitive depth for searches;
-      
+
       * ``filter``, allowing code to filter transitive paths;
-      
+
       * ``targetQuery``, allowing a query to filter transitive paths on the
         basis of the endpoint;
-      
+
       * ``targetFilter``, allowing code to filter transitive paths on the basis
         of the endpoint; and
-    
+
       * ``queryFactory``, mentioned above.
-      
+
       In addition, the ``ignoreSearchIndex`` argument to ``findRelations``,
       ``findRelationTokens``, ``findValues``, ``findValueTokens``, and
       ``canFind`` causes the search to ignore search indexes, even if there is
@@ -1702,7 +1706,7 @@ directory, which holds scripts used to test assumptions and learn.
 
 .. [#addValueIndexExceptions] Adding a value index can generate several
     exceptions.
-    
+
     You must supply both of dump and load or neither.
 
     >>> catalog.addValueIndex(supervisor, dumpEmployees, None,
@@ -1722,7 +1726,7 @@ directory, which holds scripts used to test assumptions and learn.
     ValueError: ('element already indexed', <function supervisor at ...>)
 
     You also can't add a different function under the same name.
-    
+
     >>> def supervisor2(emp, catalog):
     ...     return emp.supervisor # None or another employee
     ...
@@ -1735,7 +1739,7 @@ directory, which holds scripts used to test assumptions and learn.
 
     Finally, if your function does not have a ``__name__`` and you do not
     provide one, you may not add an index.
-    
+
     >>> class Supervisor3(object):
     ...     __name__ = None
     ...     def __call__(klass, emp, catalog):
@@ -1783,7 +1787,7 @@ directory, which holds scripts used to test assumptions and learn.
 
 .. [#findValuesExceptions] If you use ``findValues`` or ``findValueTokens`` and
     try to specify a value name that is not indexed, you get a ValueError.
-    
+
     >>> catalog.findValues('foo')
     Traceback (most recent call last):
     ...
@@ -1793,8 +1797,8 @@ directory, which holds scripts used to test assumptions and learn.
     we will look into it a bit.  Let's talk through two steps of the
     transitive search in the second question.  The catalog initially
     performs the initial intransitive search requested: find relations
-    for which Betty is the supervisor.  That's Diane and Edgar. 
-    
+    for which Betty is the supervisor.  That's Diane and Edgar.
+
     Now, for each of the results, the catalog asks the query factory for
     next steps.  Let's take Diane.  The catalog says to the factory,
     "Given this query for relations where Betty is supervisor, I got
@@ -1803,7 +1807,7 @@ directory, which holds scripts used to test assumptions and learn.
     can use it to answer the question if it needs to.
 
     OK, the next part is where your brain hurts.  Hang on.
-    
+
     In our case, the factory sees that the query was for supervisor. Its
     other key, the one it transposes with, is ``zc.relation.RELATION``. *The
     factory gets the transposing key's result for the current token.* So, for
@@ -1814,7 +1818,7 @@ directory, which holds scripts used to test assumptions and learn.
 
 .. [#needs_a_transitive_queries_factory] A search with a ``maxDepth`` > 1 but
     no ``queryFactory`` raises an error.
-    
+
     >>> catalog.removeDefaultQueryFactory(factory)
     >>> catalog.findRelationTokens({'supervisor': 'Diane'}, maxDepth=3)
     Traceback (most recent call last):
@@ -1825,7 +1829,7 @@ directory, which holds scripts used to test assumptions and learn.
 
 .. [#maxDepthExceptions] ``maxDepth`` must be None or a positive integer, or
     else you'll get a value error.
-    
+
     >>> catalog.findRelations({'supervisor': 'Betty'}, maxDepth=0)
     Traceback (most recent call last):
     ...
@@ -1909,7 +1913,7 @@ directory, which holds scripts used to test assumptions and learn.
     True
 
     The cycle doesn't pollute the index outside of the cycle.
-    
+
     >>> res = catalog.findRelationTokens({'supervisor': 'Diane'})
     >>> list(res)
     ['Howie']

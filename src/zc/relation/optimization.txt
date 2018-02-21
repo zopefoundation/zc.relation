@@ -61,8 +61,9 @@ indexed attribute descriptions explicitly set to None.
     >>> relations = BTrees.family32.IO.BTree()
     >>> relations[99] = None # just to give us a start
 
-    >>> class Relation(object):
-    ...     zope.interface.implements(IRelation)
+    >>> @@zope.interface.implementer(IRelation)
+    ... class Relation(object):
+    ...
     ...     def __init__(self, subjects, relationtype, objects):
     ...         self.subjects = subjects
     ...         assert relationtype in relTypes

@@ -34,7 +34,7 @@ in a (single) organization.  This relation will be entirely extrinsic.
 We could create two catalogs, one for each type.  Or we could put them
 both in the same catalog.  Initially, we'll go with the single-catalog
 approach for our examples.  This single catalog, then, will be indexing
-a heterogeneous collection of relations.  
+a heterogeneous collection of relations.
 
 Let's define the two relations with interfaces.  We'll include one
 accessor, getOrganization, largely to show how to handle methods.
@@ -61,7 +61,7 @@ of a toy.  This time we will be just a bit more practical.  We'll also expect
 to be operating within the ZODB, with a root and transactions. [#ZODB]_
 
 Here's how we will dump and load our relations: use a "registry"
-object, similar to an intid utility. [#faux_intid]_  
+object, similar to an intid utility. [#faux_intid]_
 
 In this implementation of the "dump" method, we use the cache just to
 show you how you might use it.  It probably is overkill for this job,
@@ -106,8 +106,9 @@ to sanely and transparently hold a set of persistent objects, try the
 zc.set package XXX not yet.)
 
     >>> import BTrees
-    >>> class Organization(persistent.Persistent):
-    ...     zope.interface.implements(IOrganization)
+    >>> @zope.interface.implementer(IOrganization)
+    ... class Organization(persistent.Persistent):
+    ...
     ...     def __init__(self, title):
     ...         self.title = title
     ...         self.parts = BTrees.family32.IF.TreeSet()
@@ -245,7 +246,7 @@ load were `None`, as discussed above).
     ...     {'part': zc.relation.catalog.any(Zookd_SAs_id, Zookd_Devs_id)}
     ...     ) == {'part': zc.relation.catalog.any(Zookd_SAs_id, Zookd_Devs_id)}
     True
-    
+
 The `tokenizeQuery` method is so common that we're going to assign it to
 a variable in our example. Then we'll do a search or two.
 
@@ -255,7 +256,7 @@ So...find the relations that Ynod Devs supervise.
     >>> res = list(catalog.findRelationTokens(t({None: orgs['Ynod Devs']})))
 
 OK...we used `findRelationTokens`, as opposed to `findRelations`, so res
-is a couple of numbers now.  How do we convert them back? 
+is a couple of numbers now.  How do we convert them back?
 `resolveRelationTokens` will do the trick.
 
     >>> len(res)
@@ -319,8 +320,9 @@ of the document.
 In our Roles object, roles and principals will simply be strings--ids, if
 this were a real system.  The organization will be a direct object reference.
 
-    >>> class Roles(persistent.Persistent):
-    ...     zope.interface.implements(IRoles)
+    >>> @zope.interface.implementer(IRoles)
+    ... class Roles(persistent.Persistent):
+    ...
     ...     def __init__(self, principal_id, role_ids, organization):
     ...         self.principal_id = principal_id
     ...         self.role_ids = BTrees.family32.OI.TreeSet(role_ids)
@@ -418,7 +420,7 @@ That answer does not need to be transitive: we're done.
 Next question.  Where does ophelia have the 'writer' role?
 
     >>> list(catalog.findValues(
-    ...     'organization', {'principal_id': 'ophelia', 
+    ...     'organization', {'principal_id': 'ophelia',
     ...                        'role_id': 'writer'}))
     [<Organization instance "Zookd Corp Management">]
 
@@ -430,7 +432,7 @@ and then find all of the transitive parts to that organization.
 
     >>> sorted(catalog.findRelations({None: zc.relation.catalog.Any(
     ...     catalog.findValueTokens('organization',
-    ...                             {'principal_id': 'ophelia', 
+    ...                             {'principal_id': 'ophelia',
     ...                              'role_id': 'writer'}))}))
     ... # doctest: +NORMALIZE_WHITESPACE
     [<Organization instance "Ynod Zookd Task Force">,
@@ -833,7 +835,7 @@ make the role_catalog have a .org_catalog attribute, and rely on that.
     ...             return set(index.catalog.findValueTokens(
     ...                 'principal_id', {
     ...                     'organization': zc.relation.catalog.Any(orgs)}))
-    ...         
+    ...
 
 If you are following along in the code and comparing to the originals, you may
 see that this approach is a bit cleaner than the one when the relations were
@@ -971,7 +973,7 @@ TODO make sure that intransitive copy looks the way we expect
     not persistent itself: this is important for conflict resolution to be
     able to work (which we don't show here, but we're trying to lean more
     towards real usage for this example).
-    
+
     >>> class Reference(object): # see zope.app.keyreference
     ...     def __init__(self, obj):
     ...         self.object = obj
@@ -1036,13 +1038,13 @@ TODO make sure that intransitive copy looks the way we expect
     ...             self.ids.pop(self.refs.pop(Reference(r)))
     ...
     >>> registry = root['registry'] = Registry()
-    
+
     >>> import transaction
     >>> transaction.commit()
 
 .. [#verifyObjectTransitive] The TransposingTransitiveMembership indexes
     provide ISearchIndex.
-    
+
     >>> from zope.interface.verify import verifyObject
     >>> import zc.relation.interfaces
     >>> index = list(catalog.iterSearchIndexes())[0]
@@ -1070,7 +1072,7 @@ TODO make sure that intransitive copy looks the way we expect
     >>> catalog.resolveRelationToken(registry.getId(
     ...     orgs['Zookd Corp Management'])) is orgs['Zookd Corp Management']
     True
-    
+
     The "values" ones are a bit lame to show now, since the only value
     we have right now is not tokenized but used straight up.  But here
     goes, showing some fascinating no-ops.
@@ -1097,7 +1099,7 @@ TODO make sure that intransitive copy looks the way we expect
 
 .. [#verifyObjectIntransitive] The Intransitive search index provides
     ISearchIndex and IListener.
-    
+
     >>> from zope.interface.verify import verifyObject
     >>> import zc.relation.interfaces
     >>> verifyObject(zc.relation.interfaces.ISearchIndex, index)
@@ -1156,7 +1158,7 @@ TODO make sure that intransitive copy looks the way we expect
     >>> def checkOpheliaWriterOrganizations(catalog):
     ...     res = sorted(catalog.findRelations({None: zc.relation.catalog.Any(
     ...         catalog.findValueTokens(
-    ...             'organization', {'principal_id': 'ophelia', 
+    ...             'organization', {'principal_id': 'ophelia',
     ...                              'role_id': 'writer'}))}))
     ...     if repr(res) != (
     ...         '[<Organization instance "Ynod Zookd Task Force">, ' +
@@ -1242,7 +1244,7 @@ TODO make sure that intransitive copy looks the way we expect
     >>> checkPrincipalsWithRolesInZookdDevs(role_catalog)
     >>> checkOpheliaRolesInZookdNbd(role_catalog)
     >>> checkAbeRolesInZookdNbd(role_catalog)
-    
+
 .. [#administrivia]
 
     You can add listeners multiple times.

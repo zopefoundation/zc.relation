@@ -11,20 +11,21 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-import persistent
 import BTrees
+import persistent
+import zc.relation.catalog
+import zc.relation.interfaces
 import zope.interface
 
-import zc.relation.interfaces
-import zc.relation.catalog
 
 ##############################################################################
 # a common case transitive queries factory
 
 _marker = object()
 
+
+@zope.interface.implementer(zc.relation.interfaces.IQueryFactory)
 class TransposingTransitive(persistent.Persistent):
-    zope.interface.implements(zc.relation.interfaces.IQueryFactory)
 
     def __init__(self, name1, name2, static=()):
         self.names = [name1, name2] # a list so we can use index

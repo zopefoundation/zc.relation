@@ -54,7 +54,7 @@ def multiunion(sets, data):
 
 def getModuleTools(module):
     return dict(
-        (nm, getattr(module, nm, None)) for nm in 
+        (nm, getattr(module, nm, None)) for nm in
         ('BTree', 'TreeSet', 'Bucket', 'Set',
          'intersection', 'multiunion', 'union', 'difference'))
 
@@ -111,8 +111,8 @@ def any(*args):
 # the marker that shows that a path is circular
 #
 
+@zope.interface.implementer(interfaces.ICircularRelationPath)
 class CircularRelationPath(tuple):
-    zope.interface.implements(interfaces.ICircularRelationPath)
 
     def __new__(kls, elements, cycled):
         res = super(CircularRelationPath, kls).__new__(kls, elements)
@@ -124,8 +124,8 @@ class CircularRelationPath(tuple):
 ##############################################################################
 # the relation catalog
 
+@zope.interface.implementer(interfaces.ICatalog)
 class Catalog(persistent.Persistent):
-    zope.interface.implements(interfaces.ICatalog)
 
     family = BTrees.family32
     _listeners = _queryFactories = _searchIndexes = ()
@@ -874,7 +874,7 @@ class Catalog(persistent.Persistent):
 
     def getRelationModuleTools(self):
         return self._relTools
-    
+
     def getValueModuleTools(self, name):
         return self._attrs[name]
 

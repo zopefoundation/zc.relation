@@ -28,6 +28,8 @@ import zc.relation.searchindex
 
 _marker = object()
 
+
+@zope.interface.implementer(zc.relation.interfaces.ISearchIndex)
 class TransposingTransitiveMembership(persistent.Persistent):
     """for searches using zc.relation.queryfactory.TransposingTransitive.
 
@@ -51,17 +53,16 @@ class TransposingTransitiveMembership(persistent.Persistent):
     This approach could be used for other query factories that only look
     at the final element in the relchain.  If that were desired, I'd abstract
     some of this code.
-    
+
     while target filters are currently supported, perhaps they shouldn't be:
     the target filter can look at the last element in the relchain, but not
     at the true relchain itself.  That is: the relchain lies, except for the
     last element.
-    
+
     The basic index is for relations.  By providing ``names`` to the
     initialization, the named value indexes will also be included in the
     transitive search index.
     """
-    zope.interface.implements(zc.relation.interfaces.ISearchIndex)
 
     name = index = catalog = None
 
@@ -264,18 +265,20 @@ class TransposingTransitiveMembership(persistent.Persistent):
             (ix.get(rel) for rel in rels), tools)
 
 
+@zope.interface.implementer(
+    zc.relation.interfaces.ISearchIndex,
+    zc.relation.interfaces.IListener,
+)
 class Intransitive(persistent.Persistent):
     """saves results for precise search.
-    
+
     Could be used for transitive searches, but writes would be much more
     expensive than the TransposingTransitive approach.
-    
+
     see tokens.txt for an example.
     """
     # XXX Rename to Direct?
-    zope.interface.implements(
-        zc.relation.interfaces.ISearchIndex,
-        zc.relation.interfaces.IListener)
+
 
     index = catalog = name = queryFactory = None
     update = frozenset()
