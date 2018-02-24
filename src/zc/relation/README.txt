@@ -418,11 +418,12 @@ queries we've encountered above.
     >>> catalog.tokenizeQuery({'supervisor': None})
     {'supervisor': None}
     >>> import pprint
-    >>> catalog.tokenizeQuery(
+    >>> result = catalog.tokenizeQuery(
     ...     {zc.relation.RELATION: zc.relation.catalog.any(a, b, f),
     ...     'supervisor': a}) # doctest: +NORMALIZE_WHITESPACE
+    >>> pprint.pprint(result)
     {None: <zc.relation.catalog.Any instance ('Alice', 'Betty', 'Frank')>,
-    'supervisor': 'Alice'}
+     'supervisor': 'Alice'}
 
 (If you are wondering about that ``None`` in the last result, yes,
 ``zc.relation.RELATION`` is just readability sugar for ``None``.)

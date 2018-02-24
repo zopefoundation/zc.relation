@@ -14,16 +14,15 @@
 import copy
 import sys
 
+import zope.interface
+import zope.interface.interfaces
+
 import BTrees
 import BTrees.check
 import BTrees.Length
 import persistent
 import persistent.list
 import persistent.wref
-
-import zope.interface
-import zope.interface.interfaces
-
 from zc.relation import interfaces
 
 ##############################################################################
@@ -611,6 +610,7 @@ class Catalog(persistent.Persistent):
                 data = dataset[key] = (
                     BTrees.Length.Length(), self._relTools['TreeSet']())
             res = data[1].insert(relToken)
+
             assert res, 'Internal error: relToken existed in data'
             data[0].change(1)
 

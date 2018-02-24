@@ -83,6 +83,11 @@ and maybe even a speed loss, but you can see the idea.
 Now we can create a relation catalog to hold these items.
 
     >>> import zc.relation.catalog
+    >>> import transaction
+    >>> from ZODB.tests.util import DB
+    >>> db = DB()
+    >>> conn = db.open()
+    >>> root = conn.root()
     >>> catalog = root['catalog'] = zc.relation.catalog.Catalog(dump, load)
     >>> transaction.commit()
 
@@ -106,6 +111,7 @@ to sanely and transparently hold a set of persistent objects, try the
 zc.set package XXX not yet.)
 
     >>> import BTrees
+    >>> import persistent
     >>> @zope.interface.implementer(IOrganization)
     ... class Organization(persistent.Persistent):
     ...

@@ -13,12 +13,15 @@
 ##############################################################################
 """Relation index tests
 """
+import doctest
 import unittest
-from zope.testing import doctest
+
 import zope.testing.module
+
 
 def setUp(test):
     zope.testing.module.setUp(test, 'zc.relation.DOCTESTS')
+
 
 def tearDown(test):
     db = test.globs.get('db')
@@ -28,23 +31,28 @@ def tearDown(test):
         db.close()
     zope.testing.module.tearDown(test)
 
+
 def test_suite():
     res = unittest.TestSuite((
         doctest.DocFileSuite(
             'README.txt',
-            setUp=setUp, tearDown=tearDown,
-            optionflags=doctest.INTERPRET_FOOTNOTES),
+            setUp=setUp,
+            tearDown=tearDown,
+        ),
         doctest.DocFileSuite(
             'tokens.txt',
-            setUp=setUp, tearDown=tearDown,
-            optionflags=doctest.INTERPRET_FOOTNOTES),
-         doctest.DocFileSuite(
-             'searchindex.txt',
-             setUp=setUp, tearDown=tearDown,
-             optionflags=doctest.INTERPRET_FOOTNOTES),
-         doctest.DocFileSuite(
-             'optimization.txt',
-             setUp=setUp, tearDown=tearDown,
-             optionflags=doctest.INTERPRET_FOOTNOTES),
-        ))
+            setUp=setUp,
+            tearDown=tearDown,
+        ),
+        doctest.DocFileSuite(
+            'searchindex.txt',
+            setUp=setUp,
+            tearDown=tearDown,
+        ),
+        doctest.DocFileSuite(
+            'optimization.txt',
+            setUp=setUp,
+            tearDown=tearDown,
+        ),
+    ))
     return res
