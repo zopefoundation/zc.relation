@@ -10,3 +10,4 @@ dist/
 *.egg-info/
 .tox/
 TEST_THIS_REST_BEFORE_REGISTERING.txt
+/src-dev/
