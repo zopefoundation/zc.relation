@@ -100,5 +100,5 @@ setup(
         
         'zope.testing',
         ],
-    extras_require={'test':'zc.relationship'},
+    extras_require={'test':'zc.relationship >= 2.0c1'},
     )
