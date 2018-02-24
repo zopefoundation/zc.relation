@@ -11,26 +11,27 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from logging import getLogger
-from setuptools import find_packages
-from setuptools import setup
+from __future__ import print_function
 
 import os
 
-
-logger = getLogger(__name__)
+from setuptools import find_packages
+from setuptools import setup
 
 # generic helpers primarily for the long_description
 try:
     import docutils
 except ImportError:
-    import warnings
     def validateReST(text):
         return ''
 else:
     import docutils.utils
     import docutils.parsers.rst
-    from io import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
     def validateReST(text):
         doc = docutils.utils.new_document('validator')
         # our desired settings
@@ -45,6 +46,7 @@ else:
         parser = docutils.parsers.rst.Parser()
         parser.parse(text, doc)
         return stream.getvalue()
+
 
 def text(*args, **kwargs):
     # note: distutils explicitly disallows unicode for setup values :-/
@@ -71,20 +73,19 @@ def text(*args, **kwargs):
         f.close()
         report = validateReST(res)
         if report:
-            logger.error(report)
+            print(report)
             raise ValueError('ReST validation error')
     return res
 # end helpers; below this line should be code custom to this package
+
 
 setup(
     name="zc.relation",
     version="1.1a",
     packages=find_packages('src'),
     include_package_data=True,
-    package_dir= {'':'src'},
-    
+    package_dir={'': 'src'},
     namespace_packages=['zc'],
-
     zip_safe=False,
     author='Gary Poster',
     author_email='gary@zope.com',
@@ -97,8 +98,7 @@ setup(
         'ZODB3 >= 3.8dev',
         'zope.interface',
         'setuptools',
-        
         'zope.testing',
-        ],
-    extras_require={'test':'zc.relationship >= 2.0c1'},
-    )
+    ],
+    extras_require={'test': 'zc.relationship >= 2.0c1'},
+)
