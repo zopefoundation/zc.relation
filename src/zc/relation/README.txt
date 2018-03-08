@@ -178,7 +178,26 @@ choose BTrees.family32.OI, arbitrarily.
     >>> catalog = zc.relation.catalog.Catalog(dumpEmployees, loadEmployees,
     ...                                       btree=BTrees.family32.OI)
 
-[#verifyObjectICatalog]_ [#legacy]_ Look! A relation catalog! We can't do very
+[#verifyObjectICatalog]_
+
+.. [#verifyObjectICatalog] The catalog provides ICatalog.
+
+    >>> from zope.interface.verify import verifyObject
+    >>> import zc.relation.interfaces
+    >>> verifyObject(zc.relation.interfaces.ICatalog, catalog)
+    True
+
+[#legacy]_
+
+
+.. [#legacy] Old instances of zc.relationship indexes, which in the newest
+    version subclass a zc.relation Catalog, used to have a dict in an
+    internal data structure.  We specify that here so that the code that
+    converts the dict to an OOBTree can have a chance to run.
+
+    >>> catalog._attrs = dict(catalog._attrs)
+
+Look! A relation catalog! We can't do very
 much searching with it so far though, because the catalog doesn't have any
 indexes.
 
@@ -210,6 +229,56 @@ Now we can add the "supervisor" value index.
     ...                       btree=BTrees.family32.OI)
 
 Now we have an index [#addValueIndexExceptions]_.
+
+.. [#addValueIndexExceptions] Adding a value index can generate several
+    exceptions.
+
+    You must supply both of dump and load or neither.
+
+    >>> catalog.addValueIndex(supervisor, dumpEmployees, None,
+    ...                       btree=BTrees.family32.OI, name='supervisor2')
+    Traceback (most recent call last):
+    ...
+    ValueError: either both of 'dump' and 'load' must be None, or neither
+
+    In this example, even if we fix it, we'll get an error, because we have
+    already indexed the supervisor function.
+
+    >>> catalog.addValueIndex(supervisor, dumpEmployees, loadEmployees,
+    ...                       btree=BTrees.family32.OI, name='supervisor2')
+    ... # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: ('element already indexed', <function supervisor at ...>)
+
+    You also can't add a different function under the same name.
+
+    >>> def supervisor2(emp, catalog):
+    ...     return emp.supervisor # None or another employee
+    ...
+    >>> catalog.addValueIndex(supervisor2, dumpEmployees, loadEmployees,
+    ...                       btree=BTrees.family32.OI, name='supervisor')
+    ... # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: ('name already used', 'supervisor')
+
+    Finally, if your function does not have a ``__name__`` and you do not
+    provide one, you may not add an index.
+
+    >>> class Supervisor3(object):
+    ...     __name__ = None
+    ...     def __call__(klass, emp, catalog):
+    ...         return emp.supervisor
+    ...
+    >>> supervisor3 = Supervisor3()
+    >>> supervisor3.__name__
+    >>> catalog.addValueIndex(supervisor3, dumpEmployees, loadEmployees,
+    ...                       btree=BTrees.family32.OI)
+    ... # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    ValueError: no name specified
 
     >>> [info['name'] for info in catalog.iterValueIndexInfo()]
     ['supervisor']
@@ -345,6 +414,25 @@ zc.relation ``Any`` class or ``any`` function to pass the multiple values.
 
 Frank, Galyn, and Howie each report to either Diane or Chuck. [#any]_
 
+.. [#any] ``Any`` can be compared.
+
+    >>> zc.relation.catalog.any('foo', 'bar', 'baz')
+    <zc.relation.catalog.Any instance ('bar', 'baz', 'foo')>
+    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') ==
+    ...  zc.relation.catalog.any('bar', 'foo', 'baz'))
+    True
+    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') !=
+    ...  zc.relation.catalog.any('bar', 'foo', 'baz'))
+    False
+    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') ==
+    ...  zc.relation.catalog.any('foo', 'baz'))
+    False
+    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') !=
+    ...  zc.relation.catalog.any('foo', 'baz'))
+    True
+
+
+
 ``findValues`` and the ``RELATION`` query key
 ---------------------------------------------
 
@@ -390,7 +478,32 @@ example, that would mean the query is ``{zc.relation.RELATION: 'Howie'}``.
 
 Congratulations, you just found an obfuscated and comparitively
 inefficient way to write ``howie.supervisor``! [#intrinsic_search]_
+
+.. [#intrinsic_search] Here's the same with token results.
+
+    >>> list(catalog.findValueTokens('supervisor',
+    ...                              {zc.relation.RELATION: 'Howie'}))
+    ['Diane']
+
+    While we're down here in the footnotes, I'll mention that you can
+    search for relations that haven't been indexed.
+
+    >>> list(catalog.findRelationTokens({zc.relation.RELATION: 'Ygritte'}))
+    []
+    >>> list(catalog.findRelations({zc.relation.RELATION: 'Ygritte'}))
+    []
+
 [#findValuesExceptions]_
+
+
+.. [#findValuesExceptions] If you use ``findValues`` or ``findValueTokens`` and
+    try to specify a value name that is not indexed, you get a ValueError.
+
+    >>> catalog.findValues('foo')
+    Traceback (most recent call last):
+    ...
+    ValueError: ('name not indexed', 'foo')
+
 
 Slightly more usefully, you can use other query keys along with
 zc.relation.RELATION. This asks, "Of Betty, Alice, and Frank, who are
@@ -561,13 +674,41 @@ Now all searches are transitive by default.
 We can force a non-transitive search, or a specific search depth, with
 ``maxDepth`` [#needs_a_transitive_queries_factory]_.
 
+
+.. [#needs_a_transitive_queries_factory] A search with a ``maxDepth`` > 1 but
+    no ``queryFactory`` raises an error.
+
+    >>> catalog.removeDefaultQueryFactory(factory)
+    >>> catalog.findRelationTokens({'supervisor': 'Diane'}, maxDepth=3)
+    Traceback (most recent call last):
+    ...
+    ValueError: if maxDepth not in (None, 1), queryFactory must be available
+
+    >>> catalog.addDefaultQueryFactory(factory)
+
     >>> list(catalog.findValues(
     ...     'supervisor', {zc.relation.RELATION: 'Howie'}, maxDepth=1))
     [<Employee instance "Diane">]
     >>> sorted(catalog.findRelations({'supervisor': 'Betty'}, maxDepth=1))
     [<Employee instance "Diane">, <Employee instance "Edgar">]
 
-[#maxDepthExceptions]_ We'll introduce some other available search
+[#maxDepthExceptions]_
+
+
+.. [#maxDepthExceptions] ``maxDepth`` must be None or a positive integer, or
+    else you'll get a value error.
+
+    >>> catalog.findRelations({'supervisor': 'Betty'}, maxDepth=0)
+    Traceback (most recent call last):
+    ...
+    ValueError: maxDepth must be None or a positive integer
+
+    >>> catalog.findRelations({'supervisor': 'Betty'}, maxDepth=-1)
+    Traceback (most recent call last):
+    ...
+    ValueError: maxDepth must be None or a positive integer
+
+We'll introduce some other available search
 arguments later in this document and in other documents.  It's important
 to note that *all search methods share the same arguments as
 ``findRelations``*.  ``findValues`` and ``findValueTokens`` only add the
@@ -680,6 +821,24 @@ supervised by other females--not Galyn, in this case.
 These can be combined with one another, and with the other search
 arguments [#filter]_.
 
+.. [#filter] For instance:
+
+    >>> list(catalog.findRelationTokens(
+    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
+    ...     targetQuery={zc.relation.RELATION: 'Galyn'}))
+    ['Galyn']
+    >>> list(catalog.findRelationTokens(
+    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
+    ...     targetQuery={zc.relation.RELATION: 'Not known'}))
+    []
+    >>> arbitrary = ['Alice', 'Chuck', 'Betty', 'Galyn']
+    >>> def arbitrary_filter(relchain, query, catalog, cache):
+    ...     return relchain[-1] in arbitrary
+    >>> list(catalog.findRelationTokens({'supervisor': 'Alice'},
+    ...                                 filter=arbitrary_filter,
+    ...                                 targetFilter=female_filter))
+    ['Betty', 'Galyn']
+
 Search indexes
 --------------
 
@@ -738,6 +897,51 @@ is repeatable.
 
 Note that the breadth-first sorting is lost when an index is used [#updates]_.
 
+.. [#updates] The scenario we are looking at in this document shows a case
+    in which special logic in the search index needs to address updates.
+    For example, if we move Howie from Diane
+
+    ::
+
+                 Alice
+              __/     \__
+         Betty           Chuck
+         /   \           /   \
+     Diane   Edgar   Frank   Galyn
+       |
+     Howie
+
+    to Galyn
+
+    ::
+
+                 Alice
+              __/     \__
+         Betty           Chuck
+         /   \           /   \
+     Diane   Edgar   Frank   Galyn
+                               |
+                             Howie
+
+    then the search index is correct both for the new location and the old.
+
+    >>> h.supervisor = g
+    >>> catalog.index(h)
+    >>> list(catalog.findRelationTokens({'supervisor': 'Diane'}))
+    []
+    >>> list(catalog.findRelationTokens({'supervisor': 'Betty'}))
+    ['Diane', 'Edgar']
+    >>> list(catalog.findRelationTokens({'supervisor': 'Chuck'}))
+    ['Frank', 'Galyn', 'Howie']
+    >>> list(catalog.findRelationTokens({'supervisor': 'Galyn'}))
+    ['Howie']
+    >>> h.supervisor = d
+    >>> catalog.index(h) # move him back
+    >>> list(catalog.findRelationTokens({'supervisor': 'Galyn'}))
+    []
+    >>> list(catalog.findRelationTokens({'supervisor': 'Diane'}))
+    ['Howie']
+
 Transitive cycles (and updating and removing relations)
 -------------------------------------------------------
 
@@ -773,6 +977,23 @@ Now we have a cycle.  Of course, we have not yet told the catalog about it.
 
 Now, if we ask who works for Betty, we get the entire tree.  (We'll ask
 for tokens, just so that the result is smaller to look at.) [#same_set]_
+
+.. [#same_set] The result of the query for Betty, Alice, and Zane are all the
+    same.
+
+    >>> res1 = catalog.findRelationTokens({'supervisor': 'Betty'})
+    >>> res2 = catalog.findRelationTokens({'supervisor': 'Alice'})
+    >>> res3 = catalog.findRelationTokens({'supervisor': 'Zane'})
+    >>> list(res1) == list(res2) == list(res3)
+    True
+
+    The cycle doesn't pollute the index outside of the cycle.
+
+    >>> res = catalog.findRelationTokens({'supervisor': 'Diane'})
+    >>> list(res)
+    ['Howie']
+    >>> list(res) # it isn't lazy, it is precalculated
+    ['Howie']
 
     >>> sorted(catalog.findRelationTokens({'supervisor': 'Betty'}))
     ... # doctest: +NORMALIZE_WHITESPACE
@@ -818,6 +1039,41 @@ cycled relation.
 
 To remove this craziness [#reverse_lookup]_, we can unindex Zane, and change
 and reindex Alice.
+
+.. [#reverse_lookup] If you want to, look what happens when you go the
+    other way:
+
+    >>> res = list(catalog.findRelationChains({'supervisor': 'Zane'}))
+    >>> def sortEqualLenByName(one, two):
+    ...     if len(one) == len(two):
+    ...         return cmp(one, two)
+    ...     return 0
+    ...
+    >>> res.sort(sortEqualLenByName) # normalizes for test stability
+    >>> print res # doctest: +NORMALIZE_WHITESPACE
+    [(<Employee instance "Alice">,),
+     (<Employee instance "Alice">, <Employee instance "Betty">),
+     (<Employee instance "Alice">, <Employee instance "Chuck">),
+     (<Employee instance "Alice">, <Employee instance "Betty">,
+      <Employee instance "Diane">),
+     (<Employee instance "Alice">, <Employee instance "Betty">,
+      <Employee instance "Edgar">),
+     cycle(<Employee instance "Alice">, <Employee instance "Betty">,
+           <Employee instance "Zane">),
+     (<Employee instance "Alice">, <Employee instance "Chuck">,
+      <Employee instance "Frank">),
+     (<Employee instance "Alice">, <Employee instance "Chuck">,
+      <Employee instance "Galyn">),
+     (<Employee instance "Alice">, <Employee instance "Betty">,
+      <Employee instance "Diane">, <Employee instance "Howie">)]
+
+    >>> [zc.relation.interfaces.ICircularRelationPath.providedBy(r)
+    ...  for r in res]
+    [False, False, False, False, False, True, False, False, False]
+    >>> len(res[5].cycled)
+    1
+    >>> list(catalog.findRelations(res[5].cycled[0], maxDepth=1))
+    [<Employee instance "Alice">]
 
     >>> a.supervisor = None
     >>> catalog.index(a)
@@ -1691,109 +1947,6 @@ directory, which holds scripts used to test assumptions and learn.
 .. FOOTNOTES ..
 .. ......... ..
 
-.. [#verifyObjectICatalog] The catalog provides ICatalog.
-
-    >>> from zope.interface.verify import verifyObject
-    >>> import zc.relation.interfaces
-    >>> verifyObject(zc.relation.interfaces.ICatalog, catalog)
-    True
-
-.. [#legacy] Old instances of zc.relationship indexes, which in the newest
-    version subclass a zc.relation Catalog, used to have a dict in an
-    internal data structure.  We specify that here so that the code that
-    converts the dict to an OOBTree can have a chance to run.
-
-    >>> catalog._attrs = dict(catalog._attrs)
-
-.. [#addValueIndexExceptions] Adding a value index can generate several
-    exceptions.
-
-    You must supply both of dump and load or neither.
-
-    >>> catalog.addValueIndex(supervisor, dumpEmployees, None,
-    ...                       btree=BTrees.family32.OI, name='supervisor2')
-    Traceback (most recent call last):
-    ...
-    ValueError: either both of 'dump' and 'load' must be None, or neither
-
-    In this example, even if we fix it, we'll get an error, because we have
-    already indexed the supervisor function.
-
-    >>> catalog.addValueIndex(supervisor, dumpEmployees, loadEmployees,
-    ...                       btree=BTrees.family32.OI, name='supervisor2')
-    ... # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-    ...
-    ValueError: ('element already indexed', <function supervisor at ...>)
-
-    You also can't add a different function under the same name.
-
-    >>> def supervisor2(emp, catalog):
-    ...     return emp.supervisor # None or another employee
-    ...
-    >>> catalog.addValueIndex(supervisor2, dumpEmployees, loadEmployees,
-    ...                       btree=BTrees.family32.OI, name='supervisor')
-    ... # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-    ...
-    ValueError: ('name already used', 'supervisor')
-
-    Finally, if your function does not have a ``__name__`` and you do not
-    provide one, you may not add an index.
-
-    >>> class Supervisor3(object):
-    ...     __name__ = None
-    ...     def __call__(klass, emp, catalog):
-    ...         return emp.supervisor
-    ...
-    >>> supervisor3 = Supervisor3()
-    >>> supervisor3.__name__
-    >>> catalog.addValueIndex(supervisor3, dumpEmployees, loadEmployees,
-    ...                       btree=BTrees.family32.OI)
-    ... # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-    ...
-    ValueError: no name specified
-
-.. [#any] ``Any`` can be compared.
-
-    >>> zc.relation.catalog.any('foo', 'bar', 'baz')
-    <zc.relation.catalog.Any instance ('bar', 'baz', 'foo')>
-    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') ==
-    ...  zc.relation.catalog.any('bar', 'foo', 'baz'))
-    True
-    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') !=
-    ...  zc.relation.catalog.any('bar', 'foo', 'baz'))
-    False
-    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') ==
-    ...  zc.relation.catalog.any('foo', 'baz'))
-    False
-    >>> (zc.relation.catalog.any('foo', 'bar', 'baz') !=
-    ...  zc.relation.catalog.any('foo', 'baz'))
-    True
-
-.. [#intrinsic_search] Here's the same with token results.
-
-    >>> list(catalog.findValueTokens('supervisor',
-    ...                              {zc.relation.RELATION: 'Howie'}))
-    ['Diane']
-
-    While we're down here in the footnotes, I'll mention that you can
-    search for relations that haven't been indexed.
-
-    >>> list(catalog.findRelationTokens({zc.relation.RELATION: 'Ygritte'}))
-    []
-    >>> list(catalog.findRelations({zc.relation.RELATION: 'Ygritte'}))
-    []
-
-.. [#findValuesExceptions] If you use ``findValues`` or ``findValueTokens`` and
-    try to specify a value name that is not indexed, you get a ValueError.
-
-    >>> catalog.findValues('foo')
-    Traceback (most recent call last):
-    ...
-    ValueError: ('name not indexed', 'foo')
-
 .. [#I_care] OK, you care about how that query factory worked, so
     we will look into it a bit.  Let's talk through two steps of the
     transitive search in the second question.  The catalog initially
@@ -1816,142 +1969,3 @@ directory, which holds scripts used to test assumptions and learn.
     the current token, Diane. Then, the factory has its answer: replace the old
     value of supervisor in the query, Betty, with the result, Diane. The next
     transitive query should be {'supervisor', 'Diane'}. Ta-da.
-
-.. [#needs_a_transitive_queries_factory] A search with a ``maxDepth`` > 1 but
-    no ``queryFactory`` raises an error.
-
-    >>> catalog.removeDefaultQueryFactory(factory)
-    >>> catalog.findRelationTokens({'supervisor': 'Diane'}, maxDepth=3)
-    Traceback (most recent call last):
-    ...
-    ValueError: if maxDepth not in (None, 1), queryFactory must be available
-
-    >>> catalog.addDefaultQueryFactory(factory)
-
-.. [#maxDepthExceptions] ``maxDepth`` must be None or a positive integer, or
-    else you'll get a value error.
-
-    >>> catalog.findRelations({'supervisor': 'Betty'}, maxDepth=0)
-    Traceback (most recent call last):
-    ...
-    ValueError: maxDepth must be None or a positive integer
-
-    >>> catalog.findRelations({'supervisor': 'Betty'}, maxDepth=-1)
-    Traceback (most recent call last):
-    ...
-    ValueError: maxDepth must be None or a positive integer
-
-.. [#filter] For instance:
-
-    >>> list(catalog.findRelationTokens(
-    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
-    ...     targetQuery={zc.relation.RELATION: 'Galyn'}))
-    ['Galyn']
-    >>> list(catalog.findRelationTokens(
-    ...     {'supervisor': 'Alice'}, targetFilter=female_filter,
-    ...     targetQuery={zc.relation.RELATION: 'Not known'}))
-    []
-    >>> arbitrary = ['Alice', 'Chuck', 'Betty', 'Galyn']
-    >>> def arbitrary_filter(relchain, query, catalog, cache):
-    ...     return relchain[-1] in arbitrary
-    >>> list(catalog.findRelationTokens({'supervisor': 'Alice'},
-    ...                                 filter=arbitrary_filter,
-    ...                                 targetFilter=female_filter))
-    ['Betty', 'Galyn']
-
-.. [#updates] The scenario we are looking at in this document shows a case
-    in which special logic in the search index needs to address updates.
-    For example, if we move Howie from Diane
-
-    ::
-
-                 Alice
-              __/     \__
-         Betty           Chuck
-         /   \           /   \
-     Diane   Edgar   Frank   Galyn
-       |
-     Howie
-
-    to Galyn
-
-    ::
-
-                 Alice
-              __/     \__
-         Betty           Chuck
-         /   \           /   \
-     Diane   Edgar   Frank   Galyn
-                               |
-                             Howie
-
-    then the search index is correct both for the new location and the old.
-
-    >>> h.supervisor = g
-    >>> catalog.index(h)
-    >>> list(catalog.findRelationTokens({'supervisor': 'Diane'}))
-    []
-    >>> list(catalog.findRelationTokens({'supervisor': 'Betty'}))
-    ['Diane', 'Edgar']
-    >>> list(catalog.findRelationTokens({'supervisor': 'Chuck'}))
-    ['Frank', 'Galyn', 'Howie']
-    >>> list(catalog.findRelationTokens({'supervisor': 'Galyn'}))
-    ['Howie']
-    >>> h.supervisor = d
-    >>> catalog.index(h) # move him back
-    >>> list(catalog.findRelationTokens({'supervisor': 'Galyn'}))
-    []
-    >>> list(catalog.findRelationTokens({'supervisor': 'Diane'}))
-    ['Howie']
-
-.. [#same_set] The result of the query for Betty, Alice, and Zane are all the
-    same.
-
-    >>> res1 = catalog.findRelationTokens({'supervisor': 'Betty'})
-    >>> res2 = catalog.findRelationTokens({'supervisor': 'Alice'})
-    >>> res3 = catalog.findRelationTokens({'supervisor': 'Zane'})
-    >>> list(res1) == list(res2) == list(res3)
-    True
-
-    The cycle doesn't pollute the index outside of the cycle.
-
-    >>> res = catalog.findRelationTokens({'supervisor': 'Diane'})
-    >>> list(res)
-    ['Howie']
-    >>> list(res) # it isn't lazy, it is precalculated
-    ['Howie']
-
-.. [#reverse_lookup] If you want to, look what happens when you go the
-    other way:
-
-    >>> res = list(catalog.findRelationChains({'supervisor': 'Zane'}))
-    >>> def sortEqualLenByName(one, two):
-    ...     if len(one) == len(two):
-    ...         return cmp(one, two)
-    ...     return 0
-    ...
-    >>> res.sort(sortEqualLenByName) # normalizes for test stability
-    >>> print res # doctest: +NORMALIZE_WHITESPACE
-    [(<Employee instance "Alice">,),
-     (<Employee instance "Alice">, <Employee instance "Betty">),
-     (<Employee instance "Alice">, <Employee instance "Chuck">),
-     (<Employee instance "Alice">, <Employee instance "Betty">,
-      <Employee instance "Diane">),
-     (<Employee instance "Alice">, <Employee instance "Betty">,
-      <Employee instance "Edgar">),
-     cycle(<Employee instance "Alice">, <Employee instance "Betty">,
-           <Employee instance "Zane">),
-     (<Employee instance "Alice">, <Employee instance "Chuck">,
-      <Employee instance "Frank">),
-     (<Employee instance "Alice">, <Employee instance "Chuck">,
-      <Employee instance "Galyn">),
-     (<Employee instance "Alice">, <Employee instance "Betty">,
-      <Employee instance "Diane">, <Employee instance "Howie">)]
-
-    >>> [zc.relation.interfaces.ICircularRelationPath.providedBy(r)
-    ...  for r in res]
-    [False, False, False, False, False, True, False, False, False]
-    >>> len(res[5].cycled)
-    1
-    >>> list(catalog.findRelations(res[5].cycled[0], maxDepth=1))
-    [<Employee instance "Alice">]
