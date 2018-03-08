@@ -1705,7 +1705,7 @@ generator.
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res2 # doctest: +ELLIPSIS
-    <generator object at 0x...>
+    <generator object _yieldValueTokens at 0x...>
     >>> sorted(res2) == list(res1)
     True
 
@@ -1716,7 +1716,7 @@ generator.
     >>> res2 = newcat.findRelationTokens(
     ...     query(subject=jack, predicate=BEGAT), ignoreSearchIndex=True)
     >>> res2 # doctest: +ELLIPSIS
-    <generator object at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> sorted(res2) == list(res1)
     True
 
@@ -1727,7 +1727,7 @@ same as usual.
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res # doctest: +ELLIPSIS
-    <generator object at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> list(res) == list(newcat.resolveValueTokens(newcat.findValueTokens(
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True), 'object'))
@@ -1737,7 +1737,7 @@ same as usual.
     ...     query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res # doctest: +ELLIPSIS
-    <generator object at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> list(res) == list(newcat.resolveRelationTokens(
     ...     newcat.findRelationTokens(
     ...         query(subject=jack, predicate=BEGAT),
