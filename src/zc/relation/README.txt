@@ -1528,8 +1528,7 @@ sent to the demo listener.
     >>> IContextual(rel5).setContext(bistro)
     >>> catalog.index(rel5) # doctest: +ELLIPSIS
     a relation (token ...) in ...Catalog... was modified with these additions:
-    {'context': set([...]),
-     'subject': set([...])}
+    {'context': set([...]), 'subject': set([...])}
     and these removals:
     {'subject': set([...])}
     >>> catalog.unindex(rel5) # doctest: +ELLIPSIS
