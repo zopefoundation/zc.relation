@@ -60,8 +60,88 @@ Now we can create some classes.  In the README example, the setup was a bit
 of a toy.  This time we will be just a bit more practical.  We'll also expect
 to be operating within the ZODB, with a root and transactions. [#ZODB]_
 
+.. [#ZODB] Here we will set up a ZODB instance for us to use.
+
+    >>> from ZODB.tests.util import DB
+    >>> db = DB()
+    >>> conn = db.open()
+    >>> root = conn.root()
+
 Here's how we will dump and load our relations: use a "registry"
 object, similar to an intid utility. [#faux_intid]_
+
+.. [#faux_intid] Here's a simple persistent keyreference.  Notice that it is
+    not persistent itself: this is important for conflict resolution to be
+    able to work (which we don't show here, but we're trying to lean more
+    towards real usage for this example).
+
+    >>> class Reference(object): # see zope.app.keyreference
+    ...     def __init__(self, obj):
+    ...         self.object = obj
+    ...     def __cmp__(self, other):
+    ...         # this doesn't work during conflict resolution.  See
+    ...         # zope.app.keyreference.persistent, 3.5 release, for current
+    ...         # best practice.
+    ...         if not isinstance(other, Reference):
+    ...             raise ValueError('can only compare with Reference objects')
+    ...         if self.object._p_jar is None or other.object._p_jar is None:
+    ...             raise ValueError(
+    ...                 'can only compare when both objects have connections')
+    ...         return cmp(
+    ...             (self.object._p_jar.db().database_name,  self.object._p_oid),
+    ...             (other.object._p_jar.db().database_name, other.object._p_oid),
+    ...             )
+    ...
+
+    Here's a simple integer identifier tool.
+
+    >>> import persistent
+    >>> import BTrees
+    >>> class Registry(persistent.Persistent): # see zope.app.intid
+    ...     def __init__(self, family=BTrees.family32):
+    ...         self.family = family
+    ...         self.ids = self.family.IO.BTree()
+    ...         self.refs = self.family.OI.BTree()
+    ...     def getId(self, obj):
+    ...         if not isinstance(obj, persistent.Persistent):
+    ...             raise ValueError('not a persistent object', obj)
+    ...         if obj._p_jar is None:
+    ...             self._p_jar.add(obj)
+    ...         ref = Reference(obj)
+    ...         id = self.refs.get(ref)
+    ...         if id is None:
+    ...             # naive for conflict resolution; see zope.app.intid
+    ...             if self.ids:
+    ...                 id = self.ids.maxKey() + 1
+    ...             else:
+    ...                  id = self.family.minint
+    ...             self.ids[id] = ref
+    ...             self.refs[ref] = id
+    ...         return id
+    ...     def __contains__(self, obj):
+    ...         if (not isinstance(obj, persistent.Persistent) or
+    ...             obj._p_oid is None):
+    ...             return False
+    ...         return Reference(obj) in self.refs
+    ...     def getObject(self, id, default=None):
+    ...         res = self.ids.get(id, None)
+    ...         if res is None:
+    ...             return default
+    ...         else:
+    ...             return res.object
+    ...     def remove(self, r):
+    ...         if isinstance(r, (int, long)):
+    ...             self.refs.pop(self.ids.pop(r))
+    ...         elif (not isinstance(r, persistent.Persistent) or
+    ...               r._p_oid is None):
+    ...             raise LookupError(r)
+    ...         else:
+    ...             self.ids.pop(self.refs.pop(Reference(r)))
+    ...
+    >>> registry = root['registry'] = Registry()
+
+    >>> import transaction
+    >>> transaction.commit()
 
 In this implementation of the "dump" method, we use the cache just to
 show you how you might use it.  It probably is overkill for this job,
@@ -83,11 +163,6 @@ and maybe even a speed loss, but you can see the idea.
 Now we can create a relation catalog to hold these items.
 
     >>> import zc.relation.catalog
-    >>> import transaction
-    >>> from ZODB.tests.util import DB
-    >>> db = DB()
-    >>> conn = db.open()
-    >>> root = conn.root()
     >>> catalog = root['catalog'] = zc.relation.catalog.Catalog(dump, load)
     >>> transaction.commit()
 
@@ -177,6 +252,15 @@ Let's add a couple of search indexes in too, of the hierarchy looking up...
 
 PLEASE NOTE: the search index looking up is not a good idea practically.  The
 index is designed for looking down [#verifyObjectTransitive]_.
+
+.. [#verifyObjectTransitive] The TransposingTransitiveMembership indexes
+    provide ISearchIndex.
+
+    >>> from zope.interface.verify import verifyObject
+    >>> import zc.relation.interfaces
+    >>> index = list(catalog.iterSearchIndexes())[0]
+    >>> verifyObject(zc.relation.interfaces.ISearchIndex, index)
+    True
 
 Let's create and add a few organizations.
 
@@ -300,6 +384,41 @@ Likewise, `tokenizeRelations` is the mirror image of `resolveRelationTokens`.
 The other token-related methods are as follows
 [#show_remaining_token_methods]_:
 
+.. [#show_remaining_token_methods] For what it's worth, here are some small
+    examples of the remaining token-related methods.
+
+    These two are the singular versions of `tokenizeRelations` and
+    `resolveRelationTokens`.
+
+    `tokenizeRelation` returns a token for the given relation.
+
+    >>> catalog.tokenizeRelation(orgs['Zookd Corp Management']) == (
+    ...     registry.getId(orgs['Zookd Corp Management']))
+    True
+
+    `resolveRelationToken` returns a relation for the given token.
+
+    >>> catalog.resolveRelationToken(registry.getId(
+    ...     orgs['Zookd Corp Management'])) is orgs['Zookd Corp Management']
+    True
+
+    The "values" ones are a bit lame to show now, since the only value
+    we have right now is not tokenized but used straight up.  But here
+    goes, showing some fascinating no-ops.
+
+    `tokenizeValues`, returns an iterable of tokens for the values of
+    the given index name.
+
+    >>> list(catalog.tokenizeValues((1,2,3), 'part'))
+    [1, 2, 3]
+
+    `resolveValueTokens` returns an iterable of values for the tokens of
+    the given index name.
+
+    >>> list(catalog.resolveValueTokens((1,2,3), 'part'))
+    [1, 2, 3]
+
+
 - `tokenizeValues`, which returns an iterable of tokens for the values
   of the given index name;
 - `resolveValueTokens`, which returns an iterable of values for the tokens of
@@ -412,6 +531,15 @@ Now let's create and add some roles.
     ...
 
 Now we can begin to do searches [#real_value_tokens]_.
+
+
+.. [#real_value_tokens] We can also show the values token methods more
+    sanely now.
+
+    >>> original = sorted((orgs['Zookd Devs'], orgs['Ynod SAs']))
+    >>> tokens = list(catalog.tokenizeValues(original, 'organization'))
+    >>> original == sorted(catalog.resolveValueTokens(tokens, 'organization'))
+    True
 
 What are all the role settings for ophelia?
 
@@ -712,7 +840,19 @@ values.
     >>> list(res)
     ['publisher', 'reviewer', 'user manager', 'writer']
 
-[#verifyObjectIntransitive]_ Now we can change and remove relations--both organizations and roles--and
+[#verifyObjectIntransitive]_
+
+.. [#verifyObjectIntransitive] The Intransitive search index provides
+    ISearchIndex and IListener.
+
+    >>> from zope.interface.verify import verifyObject
+    >>> import zc.relation.interfaces
+    >>> verifyObject(zc.relation.interfaces.ISearchIndex, index)
+    True
+    >>> verifyObject(zc.relation.interfaces.IListener, index)
+    True
+
+Now we can change and remove relations--both organizations and roles--and
 have the index maintain correct state.  Given the current state of
 organizations--
 
@@ -849,270 +989,6 @@ in the same catalog.
 
 Now we will fix up the the organization catalog [#compare_copy]_.
 
-    >>> org_catalog.removeValueIndex('organization')
-    >>> org_catalog.removeValueIndex('role_id')
-    >>> org_catalog.removeValueIndex('principal_id')
-    >>> org_catalog.removeDefaultQueryFactory(factory2)
-    >>> org_catalog.removeSearchIndex(index)
-    >>> org_catalog.clear()
-    >>> len(org_catalog)
-    0
-    >>> for v in orgs.values():
-    ...     org_catalog.index(v)
-
-This also shows using the `removeDefaultQueryFactory` and `removeSearchIndex`
-methods [#removeDefaultQueryFactoryExceptions]_.
-
-Now we will set up the role catalog [#copy_unchanged]_.
-
-    >>> role_catalog.removeValueIndex('part')
-    >>> for ix in list(role_catalog.iterSearchIndexes()):
-    ...     role_catalog.removeSearchIndex(ix)
-    ...
-    >>> role_catalog.removeDefaultQueryFactory(factory1)
-    >>> role_catalog.removeDefaultQueryFactory(factory2)
-    >>> role_catalog.addDefaultQueryFactory(factory3)
-    >>> root['index2'] = index2 = zc.relation.searchindex.Intransitive(
-    ...     ('organization', 'principal_id'), 'role_id', factory3,
-    ...     getValueTokens2,
-    ...     ('organization', 'principal_id', 'part', 'role_id'),
-    ...     unlimitedDepth=True)
-    >>> role_catalog.addSearchIndex(index2)
-
-The new role_catalog index needs to be updated from the org_catalog.
-We'll set that up using listeners, a new concept.
-
-    >>> org_catalog.addListener(index2)
-    >>> list(org_catalog.iterListeners()) == [index2]
-    True
-
-Now the role_catalog should be able to answer the same questions as the old
-single catalog approach.
-
-    >>> t = role_catalog.tokenizeQuery
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
-    ...                   'principal_id': 'abe'})))
-    ['publisher', 'user manager', 'writer']
-
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
-    ...                   'principal_id': 'ophelia'})))
-    ['publisher', 'reviewer', 'writer']
-
-We can also make changes to both catalogs and the search indexes are
-maintained.
-
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
-    ...                   'principal_id': 'abe'})))
-    []
-    >>> orgs['Zookd Devs'].parts.insert(registry.getId(orgs['Ynod Devs']))
-    1
-    >>> org_catalog.index(orgs['Zookd Devs'])
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
-    ...                   'principal_id': 'abe'})))
-    ['publisher', 'user manager', 'writer']
-    >>> orgs['Zookd Devs'].parts.remove(registry.getId(orgs['Ynod Devs']))
-    >>> org_catalog.index(orgs['Zookd Devs'])
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
-    ...                   'principal_id': 'abe'})))
-    []
-
-    >>> rels = list(role_catalog.findRelations(t(
-    ...     {'principal_id': 'abe',
-    ...      'organization': orgs['Zookd Corp Management']})))
-    >>> len(rels)
-    1
-    >>> rels[0].role_ids.insert('reviewer')
-    1
-    >>> role_catalog.index(rels[0])
-
-    >>> res = role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
-    ...                   'principal_id': 'abe'}))
-    >>> list(res)
-    ['publisher', 'reviewer', 'user manager', 'writer']
-
-Here we add a new organization.
-
-    >>> orgs['Zookd hOnc'] = org = Organization('Zookd hOnc')
-    >>> orgs['Zookd Devs'].parts.insert(registry.getId(org))
-    1
-    >>> org_catalog.index(orgs['Zookd hOnc'])
-    >>> org_catalog.index(orgs['Zookd Devs'])
-
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Zookd hOnc'],
-    ...                   'principal_id': 'abe'})))
-    ['publisher', 'reviewer', 'user manager', 'writer']
-
-    >>> list(role_catalog.findValueTokens(
-    ...     'role_id', t({'organization': orgs['Zookd hOnc'],
-    ...                   'principal_id': 'ophelia'})))
-    ['reviewer', 'writer']
-
-Now we'll remove it.
-
-    >>> orgs['Zookd Devs'].parts.remove(registry.getId(org))
-    >>> org_catalog.index(orgs['Zookd Devs'])
-    >>> org_catalog.unindex(orgs['Zookd hOnc'])
-
-TODO make sure that intransitive copy looks the way we expect
-
-[#administrivia]_
-
-.. ......... ..
-.. Footnotes ..
-.. ......... ..
-
-.. [#ZODB] Here we will set up a ZODB instance for us to use.
-
-    >>> from ZODB.tests.util import DB
-    >>> db = DB()
-    >>> conn = db.open()
-    >>> root = conn.root()
-
-.. [#faux_intid] Here's a simple persistent keyreference.  Notice that it is
-    not persistent itself: this is important for conflict resolution to be
-    able to work (which we don't show here, but we're trying to lean more
-    towards real usage for this example).
-
-    >>> class Reference(object): # see zope.app.keyreference
-    ...     def __init__(self, obj):
-    ...         self.object = obj
-    ...     def __cmp__(self, other):
-    ...         # this doesn't work during conflict resolution.  See
-    ...         # zope.app.keyreference.persistent, 3.5 release, for current
-    ...         # best practice.
-    ...         if not isinstance(other, Reference):
-    ...             raise ValueError('can only compare with Reference objects')
-    ...         if self.object._p_jar is None or other.object._p_jar is None:
-    ...             raise ValueError(
-    ...                 'can only compare when both objects have connections')
-    ...         return cmp(
-    ...             (self.object._p_jar.db().database_name,  self.object._p_oid),
-    ...             (other.object._p_jar.db().database_name, other.object._p_oid),
-    ...             )
-    ...
-
-    Here's a simple integer identifier tool.
-
-    >>> import persistent
-    >>> import BTrees
-    >>> class Registry(persistent.Persistent): # see zope.app.intid
-    ...     def __init__(self, family=BTrees.family32):
-    ...         self.family = family
-    ...         self.ids = self.family.IO.BTree()
-    ...         self.refs = self.family.OI.BTree()
-    ...     def getId(self, obj):
-    ...         if not isinstance(obj, persistent.Persistent):
-    ...             raise ValueError('not a persistent object', obj)
-    ...         if obj._p_jar is None:
-    ...             self._p_jar.add(obj)
-    ...         ref = Reference(obj)
-    ...         id = self.refs.get(ref)
-    ...         if id is None:
-    ...             # naive for conflict resolution; see zope.app.intid
-    ...             if self.ids:
-    ...                 id = self.ids.maxKey() + 1
-    ...             else:
-    ...                  id = self.family.minint
-    ...             self.ids[id] = ref
-    ...             self.refs[ref] = id
-    ...         return id
-    ...     def __contains__(self, obj):
-    ...         if (not isinstance(obj, persistent.Persistent) or
-    ...             obj._p_oid is None):
-    ...             return False
-    ...         return Reference(obj) in self.refs
-    ...     def getObject(self, id, default=None):
-    ...         res = self.ids.get(id, None)
-    ...         if res is None:
-    ...             return default
-    ...         else:
-    ...             return res.object
-    ...     def remove(self, r):
-    ...         if isinstance(r, (int, long)):
-    ...             self.refs.pop(self.ids.pop(r))
-    ...         elif (not isinstance(r, persistent.Persistent) or
-    ...               r._p_oid is None):
-    ...             raise LookupError(r)
-    ...         else:
-    ...             self.ids.pop(self.refs.pop(Reference(r)))
-    ...
-    >>> registry = root['registry'] = Registry()
-
-    >>> import transaction
-    >>> transaction.commit()
-
-.. [#verifyObjectTransitive] The TransposingTransitiveMembership indexes
-    provide ISearchIndex.
-
-    >>> from zope.interface.verify import verifyObject
-    >>> import zc.relation.interfaces
-    >>> index = list(catalog.iterSearchIndexes())[0]
-    >>> verifyObject(zc.relation.interfaces.ISearchIndex, index)
-    True
-
-.. [#silliness] In _2001: A Space Odyssey_, many people believe the name HAL
-    was chosen because it was ROT25 of IBM....  I cheat a bit sometimes and
-    use ROT1 because the result sounds better.
-
-.. [#show_remaining_token_methods] For what it's worth, here are some small
-    examples of the remaining token-related methods.
-
-    These two are the singular versions of `tokenizeRelations` and
-    `resolveRelationTokens`.
-
-    `tokenizeRelation` returns a token for the given relation.
-
-    >>> catalog.tokenizeRelation(orgs['Zookd Corp Management']) == (
-    ...     registry.getId(orgs['Zookd Corp Management']))
-    True
-
-    `resolveRelationToken` returns a relation for the given token.
-
-    >>> catalog.resolveRelationToken(registry.getId(
-    ...     orgs['Zookd Corp Management'])) is orgs['Zookd Corp Management']
-    True
-
-    The "values" ones are a bit lame to show now, since the only value
-    we have right now is not tokenized but used straight up.  But here
-    goes, showing some fascinating no-ops.
-
-    `tokenizeValues`, returns an iterable of tokens for the values of
-    the given index name.
-
-    >>> list(catalog.tokenizeValues((1,2,3), 'part'))
-    [1, 2, 3]
-
-    `resolveValueTokens` returns an iterable of values for the tokens of
-    the given index name.
-
-    >>> list(catalog.resolveValueTokens((1,2,3), 'part'))
-    [1, 2, 3]
-
-.. [#real_value_tokens] We can also show the values token methods more
-    sanely now.
-
-    >>> original = sorted((orgs['Zookd Devs'], orgs['Ynod SAs']))
-    >>> tokens = list(catalog.tokenizeValues(original, 'organization'))
-    >>> original == sorted(catalog.resolveValueTokens(tokens, 'organization'))
-    True
-
-.. [#verifyObjectIntransitive] The Intransitive search index provides
-    ISearchIndex and IListener.
-
-    >>> from zope.interface.verify import verifyObject
-    >>> import zc.relation.interfaces
-    >>> verifyObject(zc.relation.interfaces.ISearchIndex, index)
-    True
-    >>> verifyObject(zc.relation.interfaces.IListener, index)
-    True
-
 .. [#compare_copy] Before we modify them, let's look at the copy we made.
     The copy should currently behave identically to the original.
 
@@ -1213,6 +1089,25 @@ TODO make sure that intransitive copy looks the way we expect
     >>> checkAbeRolesInZookdNbd(org_catalog)
     >>> checkAbeRolesInZookdNbd(role_catalog)
 
+    >>> org_catalog.removeDefaultQueryFactory(None) # doctest: +ELLIPSIS
+    Traceback (most recent call last):
+    ...
+    LookupError: ('factory not found', None)
+
+    >>> org_catalog.removeValueIndex('organization')
+    >>> org_catalog.removeValueIndex('role_id')
+    >>> org_catalog.removeValueIndex('principal_id')
+    >>> org_catalog.removeDefaultQueryFactory(factory2)
+    >>> org_catalog.removeSearchIndex(index)
+    >>> org_catalog.clear()
+    >>> len(org_catalog)
+    0
+    >>> for v in orgs.values():
+    ...     org_catalog.index(v)
+
+This also shows using the `removeDefaultQueryFactory` and `removeSearchIndex`
+methods [#removeDefaultQueryFactoryExceptions]_.
+
 .. [#removeDefaultQueryFactoryExceptions] You get errors by removing query
     factories that are not registered.
 
@@ -1221,10 +1116,8 @@ TODO make sure that intransitive copy looks the way we expect
     ...
     LookupError: ('factory not found', <function factory2 at ...>)
 
-    >>> org_catalog.removeDefaultQueryFactory(None) # doctest: +ELLIPSIS
-    Traceback (most recent call last):
-    ...
-    LookupError: ('factory not found', None)
+Now we will set up the role catalog [#copy_unchanged]_.
+
 
 .. [#copy_unchanged] Changes to one copy should not affect the other.  That
     means the role_catalog should still work as before.
@@ -1250,6 +1143,105 @@ TODO make sure that intransitive copy looks the way we expect
     >>> checkPrincipalsWithRolesInZookdDevs(role_catalog)
     >>> checkOpheliaRolesInZookdNbd(role_catalog)
     >>> checkAbeRolesInZookdNbd(role_catalog)
+
+    >>> role_catalog.removeValueIndex('part')
+    >>> for ix in list(role_catalog.iterSearchIndexes()):
+    ...     role_catalog.removeSearchIndex(ix)
+    ...
+    >>> role_catalog.removeDefaultQueryFactory(factory1)
+    >>> role_catalog.removeDefaultQueryFactory(factory2)
+    >>> role_catalog.addDefaultQueryFactory(factory3)
+    >>> root['index2'] = index2 = zc.relation.searchindex.Intransitive(
+    ...     ('organization', 'principal_id'), 'role_id', factory3,
+    ...     getValueTokens2,
+    ...     ('organization', 'principal_id', 'part', 'role_id'),
+    ...     unlimitedDepth=True)
+    >>> role_catalog.addSearchIndex(index2)
+
+The new role_catalog index needs to be updated from the org_catalog.
+We'll set that up using listeners, a new concept.
+
+    >>> org_catalog.addListener(index2)
+    >>> list(org_catalog.iterListeners()) == [index2]
+    True
+
+Now the role_catalog should be able to answer the same questions as the old
+single catalog approach.
+
+    >>> t = role_catalog.tokenizeQuery
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
+    ...                   'principal_id': 'abe'})))
+    ['publisher', 'user manager', 'writer']
+
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
+    ...                   'principal_id': 'ophelia'})))
+    ['publisher', 'reviewer', 'writer']
+
+We can also make changes to both catalogs and the search indexes are
+maintained.
+
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
+    ...                   'principal_id': 'abe'})))
+    []
+    >>> orgs['Zookd Devs'].parts.insert(registry.getId(orgs['Ynod Devs']))
+    1
+    >>> org_catalog.index(orgs['Zookd Devs'])
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
+    ...                   'principal_id': 'abe'})))
+    ['publisher', 'user manager', 'writer']
+    >>> orgs['Zookd Devs'].parts.remove(registry.getId(orgs['Ynod Devs']))
+    >>> org_catalog.index(orgs['Zookd Devs'])
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Y3L4 Proj'],
+    ...                   'principal_id': 'abe'})))
+    []
+
+    >>> rels = list(role_catalog.findRelations(t(
+    ...     {'principal_id': 'abe',
+    ...      'organization': orgs['Zookd Corp Management']})))
+    >>> len(rels)
+    1
+    >>> rels[0].role_ids.insert('reviewer')
+    1
+    >>> role_catalog.index(rels[0])
+
+    >>> res = role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Zookd Nbd'],
+    ...                   'principal_id': 'abe'}))
+    >>> list(res)
+    ['publisher', 'reviewer', 'user manager', 'writer']
+
+Here we add a new organization.
+
+    >>> orgs['Zookd hOnc'] = org = Organization('Zookd hOnc')
+    >>> orgs['Zookd Devs'].parts.insert(registry.getId(org))
+    1
+    >>> org_catalog.index(orgs['Zookd hOnc'])
+    >>> org_catalog.index(orgs['Zookd Devs'])
+
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Zookd hOnc'],
+    ...                   'principal_id': 'abe'})))
+    ['publisher', 'reviewer', 'user manager', 'writer']
+
+    >>> list(role_catalog.findValueTokens(
+    ...     'role_id', t({'organization': orgs['Zookd hOnc'],
+    ...                   'principal_id': 'ophelia'})))
+    ['reviewer', 'writer']
+
+Now we'll remove it.
+
+    >>> orgs['Zookd Devs'].parts.remove(registry.getId(org))
+    >>> org_catalog.index(orgs['Zookd Devs'])
+    >>> org_catalog.unindex(orgs['Zookd hOnc'])
+
+TODO make sure that intransitive copy looks the way we expect
+
+[#administrivia]_
 
 .. [#administrivia]
 
@@ -1283,3 +1275,12 @@ TODO make sure that intransitive copy looks the way we expect
     ...
     LookupError: ('index not found',
                   <zc.relation.searchindex.Intransitive object at ...>)
+
+.. ......... ..
+.. Footnotes ..
+.. ......... ..
+
+
+.. [#silliness] In _2001: A Space Odyssey_, many people believe the name HAL
+    was chosen because it was ROT25 of IBM....  I cheat a bit sometimes and
+    use ROT1 because the result sounds better.
