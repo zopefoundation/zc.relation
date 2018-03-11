@@ -1231,7 +1231,7 @@ we are relying on a pattern: the dump must be called before the load.
     >>> def loadRelations(token, catalog, cache):
     ...     return _relations[token]
     ...
-    >>> catalog = zc.relation.catalog.Catalog(dumpRelations, loadRelations)
+    >>> catalog = zc.relation.catalog.Catalog(dumpRelations, loadRelations, family=BTrees.family64)
     >>> catalog.addValueIndex(IParentage['child'], dumpPeople, loadPeople,
     ...                       btree=BTrees.family32.OO)
     >>> catalog.addValueIndex(IParentage['parents'], dumpPeople, loadPeople,
