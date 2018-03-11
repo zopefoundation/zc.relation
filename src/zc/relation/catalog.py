@@ -126,7 +126,7 @@ class CircularRelationPath(tuple):
 @zope.interface.implementer(interfaces.ICatalog)
 class Catalog(persistent.Persistent):
 
-    family = BTrees.family32
+    family = BTrees.family64
     _listeners = _queryFactories = _searchIndexes = ()
     _searchIndexMatches = None
 
