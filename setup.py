@@ -98,6 +98,7 @@ setup(
         'ZODB3 >= 3.8dev',
         'zope.interface',
         'setuptools',
+        'six',
         'zope.testing',
     ],
     extras_require={'test': 'zc.relationship >= 2.0c1'},

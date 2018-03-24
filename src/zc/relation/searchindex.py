@@ -12,15 +12,15 @@
 #
 ##############################################################################
 import copy
-import itertools
 
-import persistent
-import BTrees
 import zope.interface
 
+import BTrees
+import persistent
+import six
+import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory
-import zc.relation.catalog
 import zc.relation.searchindex
 
 ##############################################################################
@@ -173,7 +173,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
                         indexed = self.index.get(rel)
                         if indexed is None:
                             iterator = reversed(stack)
-                            traversed = [iterator.next()]
+                            traversed = list(six.next(iterator))
                             for info in iterator:
                                 if rel == info[0]:
                                     sets = info[2]
@@ -352,23 +352,23 @@ class Intransitive(persistent.Persistent):
             self._indexQuery(tuple(query.items()))
 
     def _indexQuery(self, query):
-            dquery = dict(query)
-            if self.queryFactory is not None:
-                getQueries = self.queryFactory(dquery, self.catalog)
-            else:
-                getQueries = lambda empty: (query,)
-            res = zc.relation.catalog.multiunion(
-                (self.catalog.getRelationTokens(q) for q in getQueries(())),
-                self.catalog.getRelationModuleTools())
-            if not res:
-                self.index.pop(query, None)
-            else:
-                if self.name is not None:
-                    res = zc.relation.catalog.multiunion(
-                        (self.catalog.getValueTokens(self.name, r)
-                         for r in res),
-                        self.catalog.getValueModuleTools(self.name))
-                self.index[query] = res
+        dquery = dict(query)
+        if self.queryFactory is not None:
+            getQueries = self.queryFactory(dquery, self.catalog)
+        else:
+            getQueries = lambda empty: (query,)
+        res = zc.relation.catalog.multiunion(
+            (self.catalog.getRelationTokens(q) for q in getQueries(())),
+            self.catalog.getRelationModuleTools())
+        if not res:
+            self.index.pop(query, None)
+        else:
+            if self.name is not None:
+                res = zc.relation.catalog.multiunion(
+                    (self.catalog.getValueTokens(self.name, r)
+                     for r in res),
+                    self.catalog.getValueModuleTools(self.name))
+            self.index[query] = res
 
     def sourceAdded(self, catalog):
         queries = set()
@@ -438,7 +438,7 @@ class Intransitive(persistent.Persistent):
         for name in self.names:
             src = source[name]
             iterator = iter(src)
-            value = iterator.next() # should always have at least one
+            value = six.next(iterator)  # should always have at least one
             vals.append([name, value, iterator, src])
         while 1:
             yield BTrees.family32.OO.Bucket(
@@ -446,10 +446,10 @@ class Intransitive(persistent.Persistent):
             for s in vals:
                 name, value, iterator, src = s
                 try:
-                    s[1] = iterator.next()
+                    s[1] = six.next(iterator)
                 except StopIteration:
                     iterator = s[2] = iter(src)
-                    s[1] = iterator.next()
+                    s[1] = six.next(iterator)
                 else:
                     break
             else:
