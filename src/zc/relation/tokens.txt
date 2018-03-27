@@ -87,11 +87,9 @@ object, similar to an intid utility. [#faux_intid]_
     ...         if self.object._p_jar is None or other.object._p_jar is None:
     ...             raise ValueError(
     ...                 'can only compare when both objects have connections')
-    ...         return cmp(
-    ...             (self.object._p_jar.db().database_name,  self.object._p_oid),
-    ...             (other.object._p_jar.db().database_name, other.object._p_oid),
-    ...             )
-    ...
+    ...         _self = (self.object._p_jar.db().database_name,  self.object._p_oid)
+    ...         _other = (other.object._p_jar.db().database_name, other.object._p_oid)
+    ...         return (_self > _other) - (_self < _other)
 
     Here's a simple integer identifier tool.
 
