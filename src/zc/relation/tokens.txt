@@ -95,6 +95,7 @@ object, similar to an intid utility. [#faux_intid]_
 
     >>> import persistent
     >>> import BTrees
+    >>> import six
     >>> class Registry(persistent.Persistent): # see zope.app.intid
     ...     def __init__(self, family=BTrees.family32):
     ...         self.family = family
@@ -128,7 +129,7 @@ object, similar to an intid utility. [#faux_intid]_
     ...         else:
     ...             return res.object
     ...     def remove(self, r):
-    ...         if isinstance(r, (int, long)):
+    ...         if isinstance(r, six.integer_types):
     ...             self.refs.pop(self.ids.pop(r))
     ...         elif (not isinstance(r, persistent.Persistent) or
     ...               r._p_oid is None):
@@ -194,14 +195,15 @@ zc.set package XXX not yet.)
     ...     # the next parts just make the tests prettier
     ...     def __repr__(self):
     ...         return '<Organization instance "' + self.title + '">'
-    ...     def __cmp__(self, other):
+    ...     def __lt__(self, other):
     ...         # pukes if other doesn't have name
-    ...         return cmp(self.title, other.title)
+    ...         return self.title < other.title
     ...
 
 OK, now we know how organizations will work.  Now we can add the `parts`
 index to the catalog.  This will do a few new things from how we added
 indexes in the README.
+
 
     >>> catalog.addValueIndex(IOrganization['parts'], multiple=True,
     ...                       name="part")
@@ -296,7 +298,7 @@ Here's the Python.
     ...     catalog.index(org)
     ...
 
-Now the catalog knows about the relatons.
+Now the catalog knows about the relations.
 
     >>> len(catalog)
     13
@@ -457,13 +459,18 @@ this were a real system.  The organization will be a direct object reference.
     ...         return "<Roles instance (%s has %s in %s)>" % (
     ...             self.principal_id, ', '.join(self.role_ids),
     ...             self._organization.title)
-    ...     def __cmp__(self, other):
-    ...         return cmp(
-    ...             (self.principal_id, tuple(self.role_ids),
-    ...              self._organization.title),
-    ...             (other.principal_id, tuple(other.role_ids),
-    ...              other._organization.title))
-    ...
+    ...     def __lt__(self, other):
+    ...         _self = (
+    ...             self.principal_id,
+    ...             tuple(self.role_ids),
+    ...             self._organization.title,
+    ...         )
+    ...         _other = (
+    ...             other.principal_id,
+    ...             tuple(other.role_ids),
+    ...             other._organization.title,
+    ...         )
+    ...         return _self <_other
 
 Now let's add add the value indexes to the relation catalog.
 
@@ -1001,10 +1008,10 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     True
     >>> for r in indexed:
     ...     if r not in role_catalog:
-    ...         print 'bad'
+    ...         print('bad')
     ...         break
     ... else:
-    ...     print 'good'
+    ...     print('good')
     ...
     good
     >>> org_names = set(dir(org_catalog))
@@ -1018,7 +1025,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...     res = sorted(catalog.findRelations(t({None: orgs['Ynod Devs']})))
     ...     if res != [
     ...         orgs["Bet Proj"], orgs["Y3L4 Proj"], orgs["Ynod Devs"]]:
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkYnodDevsParts(org_catalog)
     >>> checkYnodDevsParts(role_catalog)
@@ -1030,7 +1037,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...         "<Roles instance (ophelia has reviewer in Zookd Devs)>, " +
     ...         "<Roles instance (ophelia has writer in " +
     ...         "Zookd Corp Management)>]"):
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkOpheliaRoles(org_catalog)
     >>> checkOpheliaRoles(role_catalog)
@@ -1048,7 +1055,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...         '<Organization instance "Zookd Nbd">, ' +
     ...         '<Organization instance "Zookd SAs">, ' +
     ...         '<Organization instance "Zookd hOgnmd">]'):
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkOpheliaWriterOrganizations(org_catalog)
     >>> checkOpheliaWriterOrganizations(role_catalog)
@@ -1060,7 +1067,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...         {'organization': zc.relation.catalog.any(
     ...             org_id, *catalog.findRelationTokens({'part': org_id}))}))
     ...     if res != ['abe', 'ignas', 'karyn', 'lettie', 'nancy', 'ophelia']:
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkPrincipalsWithRolesInZookdDevs(org_catalog)
     >>> checkPrincipalsWithRolesInZookdDevs(role_catalog)
@@ -1071,7 +1078,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...             'organization': registry.getId(orgs['Zookd Nbd']),
     ...             'principal_id': 'ophelia'}))
     ...     if res != ['publisher', 'reviewer', 'writer']:
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkOpheliaRolesInZookdNbd(org_catalog)
     >>> checkOpheliaRolesInZookdNbd(role_catalog)
@@ -1082,7 +1089,7 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...             'organization': registry.getId(orgs['Zookd Nbd']),
     ...             'principal_id': 'abe'}))
     ...     if res != ['publisher', 'user manager', 'writer']:
-    ...         print "bad", res
+    ...         print("bad", res)
     ...
     >>> checkAbeRolesInZookdNbd(org_catalog)
     >>> checkAbeRolesInZookdNbd(role_catalog)
