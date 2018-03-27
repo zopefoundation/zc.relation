@@ -107,9 +107,8 @@ name as the tokens.
     ...     # the next parts just make the tests prettier
     ...     def __repr__(self):
     ...         return '<Employee instance "' + self.name + '">'
-    ...     def __cmp__(self, other):
-    ...         # pukes if other doesn't have name
-    ...         return cmp(self.name, other.name)
+    ...     def __lt__(self, other):
+    ...         return self.name < other.name
     ...
 
 So, we need to define how to turn employees into their tokens.  We call the
