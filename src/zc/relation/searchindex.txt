@@ -51,7 +51,7 @@ identify themselves with ids.
     >>> import BTrees
     >>> relations = BTrees.family64.IO.BTree()
     >>> relations[99] = None # just to give us a start
-
+    
     >>> class Relation(object):
     ...     def __init__(self, token, children=()):
     ...         self.token = token
@@ -115,23 +115,21 @@ Twelve relations, with tokens 0 through 11, and a total of 33 tokens,
 including children.  The ids for the 12 relations are 100 through 111,
 corresponding with the tokens of 0 through 11.
 
-Without a transitive search index, we can get all transitive results.
+Without a transitive search index, we can get all transitive results. 
 The results are iterators.
 
     >>> res = catalog.findRelationTokens({'token': 0})
-    >>> import six
-    >>> next_attr = '__next__' if six.PY3 else 'next'
-    >>> getattr(res, next_attr) is None
+    >>> getattr(res, 'next') is None
     False
-    >>> getattr(res, '__len__', None) is None
-    True
+    >>> print getattr(res, '__len__', None)
+    None
     >>> sorted(res)
     [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]
     >>> list(res)
     []
-
+    
     >>> res = catalog.findValueTokens('children', {'token': 0})
-    >>> sorted(res) == list(range(1, 33))
+    >>> sorted(res) == range(1, 33)
     True
     >>> list(res)
     []
@@ -171,9 +169,9 @@ factory.
 The index can only be used under certain conditions.
 
     - The search is not a request for a relation chain.
-
+    
     - It does not specify a maximum depth.
-
+    
     - Filters are not used.
 
 If it is a value search, then specific value indexes cannot be used if a
@@ -187,7 +185,7 @@ results that use an index will usually be a BTree structure, rather than
 an iterator.
 
 When you add a transitive index for a relation, you must specify the
-transitive name (or names) of the query, and the same for the reverse.
+transitive name (or names) of the query, and the same for the reverse. 
 That's all we'll do now.
 
     >>> import zc.relation.searchindex
@@ -214,11 +212,11 @@ what we expect: correct answers, and not iterators, but BTree structures.
     [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]
     >>> list(res)
     [100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111]
-
+    
     >>> res = catalog.findValueTokens('children', {'token': 0})
-    >>> list(res) == list(range(1, 33))
+    >>> list(res) == range(1, 33)
     True
-    >>> list(res) == list(range(1, 33))
+    >>> list(res) == range(1, 33)
     True
 
     >>> catalog.canFind({'token': 1}, targetQuery={'children': 23})
@@ -260,7 +258,7 @@ It will maintain itself when relations are reindexed.
     LFSet([10, 11, 12, 25, 26, 32])
     >>> catalog.findValueTokens('children', {'token': 11})
     LFSet([32])
-
+    
     >>> rel.children.remove(32)
     >>> catalog.index(rel)
 
@@ -272,7 +270,7 @@ It will maintain itself when relations are reindexed.
     LFSet([10, 11, 12, 25, 26])
     >>> catalog.findValueTokens('children', {'token': 11})
     LFSet([])
-
+    
     >>> rel.children.insert(27)
     1
     >>> catalog.index(rel)
@@ -303,14 +301,13 @@ When the index is copied, the search index is copied.
     False
     >>> list(old_index.index.keys()) == list(new_index.index.keys())
     True
-    >>> from __future__ import print_function
     >>> for key, value in old_index.index.items():
     ...     v = new_index.index[key]
     ...     if v is value or list(v) != list(value):
-    ...         print('oops', key, value, v)
+    ...         print 'oops', key, value, v
     ...         break
     ... else:
-    ...     print('good')
+    ...     print 'good'
     ...
     good
     >>> old_index.names is not new_index.names
@@ -320,18 +317,18 @@ When the index is copied, the search index is copied.
     >>> for name, old_ix in old_index.names.items():
     ...     new_ix = new_index.names[name]
     ...     if new_ix is old_ix or list(new_ix.keys()) != list(old_ix.keys()):
-    ...         print('oops')
+    ...         print 'oops'
     ...         break
     ...     for key, value in old_ix.items():
     ...         v = new_ix[key]
     ...         if v is value or list(v) != list(value):
-    ...             print('oops', name, key, value, v)
+    ...             print 'oops', name, key, value, v
     ...             break
     ...     else:
     ...         continue
     ...     break
     ... else:
-    ...     print('good')
+    ...     print 'good'
     ...
     good
 
@@ -357,11 +354,11 @@ access to relation catalog data.  We've seen a number of these tools already:
 
     >>> tools = set(('BTree', 'Bucket', 'Set', 'TreeSet', 'difference',
     ...              'dump', 'intersection', 'load', 'multiunion', 'union'))
-    >>> tools.difference(catalog.getValueModuleTools('children').keys()) == set()
-    True
+    >>> tools.difference(catalog.getValueModuleTools('children').keys())
+    set([])
 
-    >>> tools.difference(catalog.getValueModuleTools('token').keys()) == set()
-    True
+    >>> tools.difference(catalog.getValueModuleTools('token').keys())
+    set([])
 
 - `getRelationTokens` can return all of the tokens in the catalog.
 
@@ -370,7 +367,7 @@ access to relation catalog data.  We've seen a number of these tools already:
 
     This also happens to be equivalent to `findRelationTokens` with an empty
     query.
-
+    
     >>> catalog.getRelationTokens() is catalog.findRelationTokens({})
     True
 
@@ -388,25 +385,25 @@ access to relation catalog data.  We've seen a number of these tools already:
     >>> catalog.findRelationTokens({'token': 0}, maxDepth=1) is (
     ...     catalog.getRelationTokens({'token': 0}))
     True
-
+    
     Except that if there are no matches, `findRelationTokens` returns an empty
     set (so it *always* returns an iterable).
-
+    
     >>> catalog.findRelationTokens({'token': 50}, maxDepth=1)
     LOSet([])
-    >>> print(catalog.getRelationTokens({'token': 50}))
+    >>> print catalog.getRelationTokens({'token': 50})
     None
 
 - `getValueTokens` can return all of the tokens for a given value name in
     the catalog.
 
-    >>> list(catalog.getValueTokens('token')) == list(range(12))
+    >>> list(catalog.getValueTokens('token')) == range(12)
     True
 
     This is identical to catalog.findValueTokens with a name only (or with
     an empty query, and a maxDepth of 1).
 
-    >>> list(catalog.findValueTokens('token')) == list(range(12))
+    >>> list(catalog.findValueTokens('token')) == range(12)
     True
     >>> catalog.findValueTokens('token') is catalog.getValueTokens('token')
     True
@@ -424,21 +421,21 @@ access to relation catalog data.  We've seen a number of these tools already:
     >>> catalog.getValueTokens('children', 100) is (
     ...     catalog.findValueTokens('children', {None: 100}))
     True
-
+    
     Except that if there are no matches, `findValueTokens` returns an empty
     set (so it *always* returns an iterable); while getValueTokens will
     return None if the relation has no values (or the relation is unknown).
-
+    
     >>> catalog.findValueTokens('children', {None: 50}, maxDepth=1)
     LFSet([])
-    >>> print(catalog.getValueTokens('children', 50))
+    >>> print catalog.getValueTokens('children', 50)
     None
-
+    
     >>> rel.children.remove(27)
     >>> catalog.index(rel)
     >>> catalog.findValueTokens('children', {None: rel.id}, maxDepth=1)
     LFSet([])
-    >>> print(catalog.getValueTokens('children', rel.id))
+    >>> print catalog.getValueTokens('children', rel.id)
     None
 
 - `yieldRelationTokenChains` is a search workhorse for searches that use a
@@ -451,14 +448,14 @@ access to relation catalog data.  We've seen a number of these tools already:
 .. [#queryFactory] The query factory knows when it is not needed--not only
     when neither of its names are used, but also when both of its names are
     used.
-
+    
     >>> list(catalog.findRelationTokens({'token': 0, 'children': 1}))
     [100]
 
 .. [#findValuesUnindexed] When values are the same as their tokens,
     `findValues` returns the same result as `findValueTokens`.  Here
     we see this without indexes.
-
+    
     >>> list(catalog.findValueTokens('children', {'token': 0})) == list(
     ...     catalog.findValues('children', {'token': 0}))
     True
@@ -466,7 +463,7 @@ access to relation catalog data.  We've seen a number of these tools already:
 .. [#findValuesIndexed] Again, when values are the same as their tokens,
     `findValues` returns the same result as `findValueTokens`.  Here
     we see this with indexes.
-
+    
     >>> list(catalog.findValueTokens('children', {'token': 0})) == list(
     ...     catalog.findValues('children', {'token': 0}))
     True

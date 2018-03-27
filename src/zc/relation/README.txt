@@ -107,8 +107,6 @@ name as the tokens.
     ...     # the next parts just make the tests prettier
     ...     def __repr__(self):
     ...         return '<Employee instance "' + self.name + '">'
-    ...     def __lt__(self, other):
-    ...         return self.name < other.name
     ...     def __cmp__(self, other):
     ...         # pukes if other doesn't have name
     ...         return cmp(self.name, other.name)
@@ -1046,9 +1044,13 @@ and reindex Alice.
     other way:
 
     >>> res = list(catalog.findRelationChains({'supervisor': 'Zane'}))
-    >>> res.sort() # normalizes for test stability
-    >>> from __future__ import print_function
-    >>> print(res) # doctest: +NORMALIZE_WHITESPACE
+    >>> def sortEqualLenByName(one, two):
+    ...     if len(one) == len(two):
+    ...         return cmp(one, two)
+    ...     return 0
+    ...
+    >>> res.sort(sortEqualLenByName) # normalizes for test stability
+    >>> print res # doctest: +NORMALIZE_WHITESPACE
     [(<Employee instance "Alice">,),
      (<Employee instance "Alice">, <Employee instance "Betty">),
      (<Employee instance "Alice">, <Employee instance "Chuck">),
@@ -1478,27 +1480,27 @@ removed value tokens}.
     ... class DemoListener(persistent.Persistent):
     ...
     ...     def relationAdded(self, token, catalog, additions):
-    ...         print('a relation (token %r) was added to %r '
+    ...         print ('a relation (token %r) was added to %r '
     ...                'with these values:' % (token, catalog))
     ...         pchange(additions)
     ...     def relationModified(self, token, catalog, additions, removals):
-    ...         print('a relation (token %r) in %r was modified '
+    ...         print ('a relation (token %r) in %r was modified '
     ...                'with these additions:' % (token, catalog))
     ...         pchange(additions)
-    ...         print('and these removals:')
+    ...         print 'and these removals:'
     ...         pchange(removals)
     ...     def relationRemoved(self, token, catalog, removals):
-    ...         print('a relation (token %r) was removed from %r '
+    ...         print ('a relation (token %r) was removed from %r '
     ...                'with these values:' % (token, catalog))
     ...         pchange(removals)
     ...     def sourceCleared(self, catalog):
-    ...         print('catalog %r had all relations unindexed' % (catalog,))
+    ...         print 'catalog %r had all relations unindexed' % (catalog,)
     ...     def sourceAdded(self, catalog):
-    ...         print('now listening to catalog %r' % (catalog,))
+    ...         print 'now listening to catalog %r' % (catalog,)
     ...     def sourceRemoved(self, catalog):
-    ...         print('no longer listening to catalog %r' % (catalog,))
+    ...         print 'no longer listening to catalog %r' % (catalog,)
     ...     def sourceCopied(self, original, copy):
-    ...         print('catalog %r made a copy %r' % (catalog, copy))
+    ...         print 'catalog %r made a copy %r' % (catalog, copy)
     ...         copy.addListener(self)
     ...
 
@@ -1702,7 +1704,7 @@ generator.
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res2 # doctest: +ELLIPSIS
-    <generator object ... at 0x...>
+    <generator object _yieldValueTokens at 0x...>
     >>> sorted(res2) == list(res1)
     True
 
@@ -1713,7 +1715,7 @@ generator.
     >>> res2 = newcat.findRelationTokens(
     ...     query(subject=jack, predicate=BEGAT), ignoreSearchIndex=True)
     >>> res2 # doctest: +ELLIPSIS
-    <generator object ... at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> sorted(res2) == list(res1)
     True
 
@@ -1724,7 +1726,7 @@ same as usual.
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res # doctest: +ELLIPSIS
-    <generator object ... at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> list(res) == list(newcat.resolveValueTokens(newcat.findValueTokens(
     ...     'object', query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True), 'object'))
@@ -1734,7 +1736,7 @@ same as usual.
     ...     query(subject=jack, predicate=BEGAT),
     ...     ignoreSearchIndex=True)
     >>> res # doctest: +ELLIPSIS
-    <generator object ... at 0x...>
+    <generator object <genexpr> at 0x...>
     >>> list(res) == list(newcat.resolveRelationTokens(
     ...     newcat.findRelationTokens(
     ...         query(subject=jack, predicate=BEGAT),
