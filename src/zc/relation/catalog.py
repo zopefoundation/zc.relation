@@ -23,6 +23,7 @@ import BTrees.Length
 import persistent
 import persistent.list
 import persistent.wref
+import six
 from zc.relation import interfaces
 
 ##############################################################################
@@ -833,7 +834,7 @@ class Catalog(persistent.Persistent):
                'internal error: parse expects query and targetQuery '
                'to already be normalized (to OO.Bucket.')
         if maxDepth is not None and (
-            not isinstance(maxDepth, (int, long)) or maxDepth < 1):
+            not isinstance(maxDepth, six.integer_types) or maxDepth < 1):
             raise ValueError('maxDepth must be None or a positive integer')
         if getQueries is not None:
             queries = getQueries(())
