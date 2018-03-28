@@ -1473,7 +1473,7 @@ removed value tokens}.
 
     >>> def pchange(d):
     ...     pprint.pprint(dict(
-    ...         (k, v is not None and set(v) or v) for k, v in d.items()))
+    ...         (k, v is not None and sorted(set(v)) or v) for k, v in d.items()))
     >>> @zope.interface.implementer(zc.relation.interfaces.IListener)
     ... class DemoListener(persistent.Persistent):
     ...
@@ -1519,22 +1519,22 @@ sent to the demo listener.
     >>> catalog.index(rel5) # doctest: +ELLIPSIS
     a relation (token ...) was added to <...Catalog...> with these values:
     {'context': None,
-     'object': set([...]),
-     'predicate': set(['OBSERVES']),
-     'subject': set([...])}
+     'object': [...],
+     'predicate': ['OBSERVES'],
+     'subject': [...]}
     >>> rel5.subjects = (jack,)
     >>> IContextual(rel5).setContext(bistro)
     >>> catalog.index(rel5) # doctest: +ELLIPSIS
     a relation (token ...) in ...Catalog... was modified with these additions:
-    {'context': set([...]), 'subject': set([...])}
+    {'context': [...], 'subject': [...]}
     and these removals:
-    {'subject': set([...])}
+    {'subject': [...]}
     >>> catalog.unindex(rel5) # doctest: +ELLIPSIS
     a relation (token ...) was removed from <...Catalog...> with these values:
-    {'context': set([...]),
-     'object': set([...]),
-     'predicate': set(['OBSERVES']),
-     'subject': set([...])}
+    {'context': [...],
+     'object': [...],
+     'predicate': ['OBSERVES'],
+     'subject': [...]}
 
     >>> catalog.removeListener(listener) # doctest: +ELLIPSIS
     no longer listening to catalog <...Catalog...>
@@ -1599,15 +1599,15 @@ new copy. This is done at the very end of the ``copy`` process.
     >>> catalog.index(rel6) # doctest: +ELLIPSIS
     a relation (token ...) was added to <...Catalog...> with these values:
     {'context': None,
-     'object': set([...]),
-     'predicate': set(['BEGAT']),
-     'subject': set([..., ...])}
+     'object': [...],
+     'predicate': ['BEGAT'],
+     'subject': [..., ...]}
     >>> catalog.index(rel7) # doctest: +ELLIPSIS
     a relation (token ...) was added to <...Catalog...> with these values:
     {'context': None,
-     'object': set([...]),
-     'predicate': set(['BEGAT']),
-     'subject': set([..., ...])}
+     'object': [...],
+     'predicate': ['BEGAT'],
+     'subject': [..., ...]}
     >>> catalog.addDefaultQueryFactory(
     ...     zc.relation.queryfactory.TransposingTransitive(
     ...         'subject', 'object', {'predicate': BEGAT}))
@@ -1640,15 +1640,15 @@ copy.
     >>> rel8 = root['rel8'] = Relation((henry, buffy), BEGAT, (zack,))
     >>> newcat.index(rel7) # doctest: +ELLIPSIS
     a relation (token ...) in ...Catalog... was modified with these additions:
-    {'object': set([...])}
+    {'object': [...]}
     and these removals:
     {}
     >>> newcat.index(rel8) # doctest: +ELLIPSIS
     a relation (token ...) was added to ...Catalog... with these values:
     {'context': None,
-     'object': set([...]),
-     'predicate': set(['BEGAT']),
-     'subject': set([..., ...])}
+     'object': [...],
+     'predicate': ['BEGAT'],
+     'subject': [..., ...]}
     >>> len(newcat)
     8
     >>> sorted(
