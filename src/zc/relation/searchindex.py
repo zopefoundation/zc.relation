@@ -12,15 +12,15 @@
 #
 ##############################################################################
 import copy
-import itertools
 
-import persistent
-import BTrees
 import zope.interface
 
+import BTrees
+import persistent
+import six
+import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory
-import zc.relation.catalog
 import zc.relation.searchindex
 
 ##############################################################################
@@ -28,6 +28,8 @@ import zc.relation.searchindex
 
 _marker = object()
 
+
+@zope.interface.implementer(zc.relation.interfaces.ISearchIndex)
 class TransposingTransitiveMembership(persistent.Persistent):
     """for searches using zc.relation.queryfactory.TransposingTransitive.
 
@@ -51,17 +53,16 @@ class TransposingTransitiveMembership(persistent.Persistent):
     This approach could be used for other query factories that only look
     at the final element in the relchain.  If that were desired, I'd abstract
     some of this code.
-    
+
     while target filters are currently supported, perhaps they shouldn't be:
     the target filter can look at the last element in the relchain, but not
     at the true relchain itself.  That is: the relchain lies, except for the
     last element.
-    
+
     The basic index is for relations.  By providing ``names`` to the
     initialization, the named value indexes will also be included in the
     transitive search index.
     """
-    zope.interface.implements(zc.relation.interfaces.ISearchIndex)
 
     name = index = catalog = None
 
@@ -172,7 +173,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
                         indexed = self.index.get(rel)
                         if indexed is None:
                             iterator = reversed(stack)
-                            traversed = [iterator.next()]
+                            traversed = [six.next(iterator)]
                             for info in iterator:
                                 if rel == info[0]:
                                     sets = info[2]
@@ -264,18 +265,20 @@ class TransposingTransitiveMembership(persistent.Persistent):
             (ix.get(rel) for rel in rels), tools)
 
 
+@zope.interface.implementer(
+    zc.relation.interfaces.ISearchIndex,
+    zc.relation.interfaces.IListener,
+)
 class Intransitive(persistent.Persistent):
     """saves results for precise search.
-    
+
     Could be used for transitive searches, but writes would be much more
     expensive than the TransposingTransitive approach.
-    
+
     see tokens.txt for an example.
     """
     # XXX Rename to Direct?
-    zope.interface.implements(
-        zc.relation.interfaces.ISearchIndex,
-        zc.relation.interfaces.IListener)
+
 
     index = catalog = name = queryFactory = None
     update = frozenset()
@@ -349,23 +352,23 @@ class Intransitive(persistent.Persistent):
             self._indexQuery(tuple(query.items()))
 
     def _indexQuery(self, query):
-            dquery = dict(query)
-            if self.queryFactory is not None:
-                getQueries = self.queryFactory(dquery, self.catalog)
-            else:
-                getQueries = lambda empty: (query,)
-            res = zc.relation.catalog.multiunion(
-                (self.catalog.getRelationTokens(q) for q in getQueries(())),
-                self.catalog.getRelationModuleTools())
-            if not res:
-                self.index.pop(query, None)
-            else:
-                if self.name is not None:
-                    res = zc.relation.catalog.multiunion(
-                        (self.catalog.getValueTokens(self.name, r)
-                         for r in res),
-                        self.catalog.getValueModuleTools(self.name))
-                self.index[query] = res
+        dquery = dict(query)
+        if self.queryFactory is not None:
+            getQueries = self.queryFactory(dquery, self.catalog)
+        else:
+            getQueries = lambda empty: (query,)
+        res = zc.relation.catalog.multiunion(
+            (self.catalog.getRelationTokens(q) for q in getQueries(())),
+            self.catalog.getRelationModuleTools())
+        if not res:
+            self.index.pop(query, None)
+        else:
+            if self.name is not None:
+                res = zc.relation.catalog.multiunion(
+                    (self.catalog.getValueTokens(self.name, r)
+                     for r in res),
+                    self.catalog.getValueModuleTools(self.name))
+            self.index[query] = res
 
     def sourceAdded(self, catalog):
         queries = set()
@@ -435,7 +438,7 @@ class Intransitive(persistent.Persistent):
         for name in self.names:
             src = source[name]
             iterator = iter(src)
-            value = iterator.next() # should always have at least one
+            value = six.next(iterator)  # should always have at least one
             vals.append([name, value, iterator, src])
         while 1:
             yield BTrees.family32.OO.Bucket(
@@ -443,10 +446,10 @@ class Intransitive(persistent.Persistent):
             for s in vals:
                 name, value, iterator, src = s
                 try:
-                    s[1] = iterator.next()
+                    s[1] = six.next(iterator)
                 except StopIteration:
                     iterator = s[2] = iter(src)
-                    s[1] = iterator.next()
+                    s[1] = six.next(iterator)
                 else:
                     break
             else:
