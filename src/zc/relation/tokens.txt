@@ -78,18 +78,28 @@ object, similar to an intid utility. [#faux_intid]_
     >>> class Reference(object): # see zope.app.keyreference
     ...     def __init__(self, obj):
     ...         self.object = obj
-    ...     def __cmp__(self, other):
+    ...     def _get_sorting_key(self):
+    ...         # this doesn't work during conflict resolution.  See
+    ...         # zope.app.keyreference.persistent, 3.5 release, for current
+    ...         # best practice.
+    ...         if self.object._p_jar is None:
+    ...             raise ValueError(
+    ...                 'can only compare when both objects have connections')
+    ...         return self.object._p_oid or ''
+    ...     def __lt__(self, other):
     ...         # this doesn't work during conflict resolution.  See
     ...         # zope.app.keyreference.persistent, 3.5 release, for current
     ...         # best practice.
     ...         if not isinstance(other, Reference):
     ...             raise ValueError('can only compare with Reference objects')
-    ...         if self.object._p_jar is None or other.object._p_jar is None:
-    ...             raise ValueError(
-    ...                 'can only compare when both objects have connections')
-    ...         _self = (self.object._p_jar.db().database_name,  self.object._p_oid)
-    ...         _other = (other.object._p_jar.db().database_name, other.object._p_oid)
-    ...         return (_self > _other) - (_self < _other)
+    ...         return self._get_sorting_key() < other._get_sorting_key()
+    ...     def __eq__(self, other):
+    ...         # this doesn't work during conflict resolution.  See
+    ...         # zope.app.keyreference.persistent, 3.5 release, for current
+    ...         # best practice.
+    ...         if not isinstance(other, Reference):
+    ...             raise ValueError('can only compare with Reference objects')
+    ...         return self._get_sorting_key() == other._get_sorting_key()
 
     Here's a simple integer identifier tool.
 
@@ -814,7 +824,7 @@ values.
     ...         # we only want custom behavior if this is an organization
     ...         if 'principal_id' in source or index.catalog.getValueTokens(
     ...             'principal_id', token):
-    ...             return
+    ...             return ''
     ...         orgs = set((token,))
     ...         orgs.update(index.catalog.findRelationTokens(
     ...             {'part': token}))
@@ -822,6 +832,7 @@ values.
     ...             'principal_id', {
     ...                 'organization': zc.relation.catalog.Any(orgs)}))
     ...
+
     >>> index = zc.relation.searchindex.Intransitive(
     ...     ('organization', 'principal_id'), 'role_id', factory2,
     ...     getValueTokens,
@@ -986,7 +997,7 @@ make the role_catalog have a .org_catalog attribute, and rely on that.
     ...             return set(index.catalog.findValueTokens(
     ...                 'principal_id', {
     ...                     'organization': zc.relation.catalog.Any(orgs)}))
-    ...
+    ...     return ''
 
 If you are following along in the code and comparing to the originals, you may
 see that this approach is a bit cleaner than the one when the relations were
@@ -1016,10 +1027,10 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     good
     >>> org_names = set(dir(org_catalog))
     >>> role_names = set(dir(role_catalog))
-    >>> org_names - role_names
-    set([])
-    >>> role_names - org_names
-    set(['org_catalog'])
+    >>> sorted(org_names - role_names)
+    []
+    >>> sorted(role_names - org_names)
+    ['org_catalog']
 
     >>> def checkYnodDevsParts(catalog):
     ...     res = sorted(catalog.findRelations(t({None: orgs['Ynod Devs']})))
@@ -1093,7 +1104,6 @@ Now we will fix up the the organization catalog [#compare_copy]_.
     ...
     >>> checkAbeRolesInZookdNbd(org_catalog)
     >>> checkAbeRolesInZookdNbd(role_catalog)
-
     >>> org_catalog.removeDefaultQueryFactory(None) # doctest: +ELLIPSIS
     Traceback (most recent call last):
     ...
