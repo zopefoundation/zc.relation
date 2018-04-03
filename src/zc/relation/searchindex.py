@@ -201,9 +201,9 @@ class TransposingTransitiveMembership(persistent.Persistent):
                     # children will be the same set; or this *may* be
                     # a cycle, because this is an initial indexing.
                     # Walk down, passing token.
-                    next = empty.pop()
+                    _next = empty.pop()
                     stack.append(
-                        [next, None, set(), [], set((next,)), False])
+                        [_next, None, set(), [], set((_next,)), False])
                 else:
                     stack.pop()
                     assert stack or not cycled, (

@@ -914,7 +914,7 @@ class Catalog(persistent.Persistent):
                 walkFurther = maxDepth is None or len(tokenChain) < maxDepth
                 if getQueries is not None and (walkFurther or findCycles):
                     oldInputs = frozenset(tokenChain)
-                    next = set()
+                    _next = set()
                     cycled = []
                     for q in getQueries(tokenChain):
                         relData = self._relData(q)
@@ -924,9 +924,9 @@ class Catalog(persistent.Persistent):
                                 # it's a cycle
                                 cycled.append(q)
                             elif walkFurther:
-                                next.update(relData)
-                    if walkFurther and next:
-                        stack.append((tokenChain, iter(next)))
+                                _next.update(relData)
+                    if walkFurther and _next:
+                        stack.append((tokenChain, iter(_next)))
                     if cycled:
                         tokenChain = CircularRelationPath(
                             tokenChain, cycled)
