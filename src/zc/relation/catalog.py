@@ -903,7 +903,7 @@ class Catalog(persistent.Persistent):
         while stack:
             tokenChain, relDataIter = stack[0]
             try:
-                relToken = six.next(relDataIter)
+                relToken = next(relDataIter)
             except StopIteration:
                 stack.pop(0)
             else:
@@ -1159,7 +1159,7 @@ class Catalog(persistent.Persistent):
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         try:
-            six.next(self.yieldRelationTokenChains(
+            next(self.yieldRelationTokenChains(
                 *self._parse(
                     query, maxDepth, filter, targetQuery,
                     targetFilter, getQueries) +

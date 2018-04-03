@@ -17,7 +17,6 @@ import zope.interface
 
 import BTrees
 import persistent
-import six
 import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory
@@ -173,7 +172,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
                         indexed = self.index.get(rel)
                         if indexed is None:
                             iterator = reversed(stack)
-                            traversed = [six.next(iterator)]
+                            traversed = [next(iterator)]
                             for info in iterator:
                                 if rel == info[0]:
                                     sets = info[2]
@@ -438,7 +437,7 @@ class Intransitive(persistent.Persistent):
         for name in self.names:
             src = source[name]
             iterator = iter(src)
-            value = six.next(iterator)  # should always have at least one
+            value = next(iterator)  # should always have at least one
             vals.append([name, value, iterator, src])
         while 1:
             yield BTrees.family32.OO.Bucket(
@@ -446,10 +445,10 @@ class Intransitive(persistent.Persistent):
             for s in vals:
                 name, value, iterator, src = s
                 try:
-                    s[1] = six.next(iterator)
+                    s[1] = next(iterator)
                 except StopIteration:
                     iterator = s[2] = iter(src)
-                    s[1] = six.next(iterator)
+                    s[1] = next(iterator)
                 else:
                     break
             else:
