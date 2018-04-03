@@ -75,7 +75,9 @@ object, similar to an intid utility. [#faux_intid]_
     able to work (which we don't show here, but we're trying to lean more
     towards real usage for this example).
 
-    >>> class Reference(object): # see zope.app.keyreference
+    >>> from functools import total_ordering
+    >>> @total_ordering
+    ... class Reference(object): # see zope.app.keyreference
     ...     def __init__(self, obj):
     ...         self.object = obj
     ...     def _get_sorting_key(self):
@@ -197,6 +199,7 @@ zc.set package XXX not yet.)
     >>> import BTrees
     >>> import persistent
     >>> @zope.interface.implementer(IOrganization)
+    ... @total_ordering
     ... class Organization(persistent.Persistent):
     ...
     ...     def __init__(self, title):
@@ -208,6 +211,10 @@ zc.set package XXX not yet.)
     ...     def __lt__(self, other):
     ...         # pukes if other doesn't have name
     ...         return self.title < other.title
+    ...     def __eq__(self, other):
+    ...         return self is other
+    ...     def __hash__(self):
+    ...         return 1  # dummy
     ...
 
 OK, now we know how organizations will work.  Now we can add the `parts`
@@ -456,6 +463,7 @@ In our Roles object, roles and principals will simply be strings--ids, if
 this were a real system.  The organization will be a direct object reference.
 
     >>> @zope.interface.implementer(IRoles)
+    ... @total_ordering
     ... class Roles(persistent.Persistent):
     ...
     ...     def __init__(self, principal_id, role_ids, organization):
@@ -481,6 +489,11 @@ this were a real system.  The organization will be a direct object reference.
     ...             other._organization.title,
     ...         )
     ...         return _self <_other
+    ...     def __eq__(self, other):
+    ...         return self is other
+    ...     def __hash__(self):
+    ...         return 1  # dummy
+    ...
 
 Now let's add add the value indexes to the relation catalog.
 

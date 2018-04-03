@@ -97,7 +97,9 @@ Here is our toy ``Employee`` example class.  Again, we will use the employee
 name as the tokens.
 
     >>> employees = {} # we'll use this to resolve the "name" tokens
-    >>> class Employee(object):
+    >>> from functools import total_ordering
+    >>> @total_ordering
+    ... class Employee(object):
     ...     def __init__(self, name, supervisor=None):
     ...         if name in employees:
     ...             raise ValueError('employee with same name already exists')
@@ -109,6 +111,12 @@ name as the tokens.
     ...         return '<Employee instance "' + self.name + '">'
     ...     def __lt__(self, other):
     ...         return self.name < other.name
+    ...     def __eq__(self, other):
+    ...         return False
+    ...     def __hash__(self):
+    ...         ''' Dummy method needed because we defined __eq__
+    ...         '''
+    ...         return 1
     ...
 
 So, we need to define how to turn employees into their tokens.  We call the
