@@ -112,7 +112,7 @@ name as the tokens.
     ...     def __lt__(self, other):
     ...         return self.name < other.name
     ...     def __eq__(self, other):
-    ...         return False
+    ...         return self is other
     ...     def __hash__(self):
     ...         ''' Dummy method needed because we defined __eq__
     ...         '''
