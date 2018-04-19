@@ -11,26 +11,33 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+from __future__ import print_function
+
 import os
-from setuptools import setup, find_packages
+
+from setuptools import find_packages
+from setuptools import setup
 
 # generic helpers primarily for the long_description
 try:
     import docutils
 except ImportError:
-    import warnings
     def validateReST(text):
         return ''
 else:
     import docutils.utils
     import docutils.parsers.rst
-    import StringIO
+    try:
+        from StringIO import StringIO
+    except ImportError:
+        from io import StringIO
+
     def validateReST(text):
         doc = docutils.utils.new_document('validator')
         # our desired settings
         doc.reporter.halt_level = 5
         doc.reporter.report_level = 1
-        stream = doc.reporter.stream = StringIO.StringIO()
+        stream = doc.reporter.stream = StringIO()
         # docutils buglets (?)
         doc.settings.tab_width = 2
         doc.settings.pep_references = doc.settings.rfc_references = False
@@ -39,6 +46,7 @@ else:
         parser = docutils.parsers.rst.Parser()
         parser.parse(text, doc)
         return stream.getvalue()
+
 
 def text(*args, **kwargs):
     # note: distutils explicitly disallows unicode for setup values :-/
@@ -65,34 +73,42 @@ def text(*args, **kwargs):
         f.close()
         report = validateReST(res)
         if report:
-            print report
+            print(report)
             raise ValueError('ReST validation error')
     return res
 # end helpers; below this line should be code custom to this package
+
 
 setup(
     name="zc.relation",
     version="1.1a",
     packages=find_packages('src'),
     include_package_data=True,
-    package_dir= {'':'src'},
-    
+    package_dir={'': 'src'},
     namespace_packages=['zc'],
-
     zip_safe=False,
     author='Gary Poster',
     author_email='gary@zope.com',
     description=text("README.txt"),
     long_description=text('src/zc/relation/README.txt',
                           'src/zc/relation/CHANGES.txt'),
+    classifiers=[
+        'Programming Language :: Python',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+    ],
     license='ZPL 2.1',
     keywords="zope zope3",
     install_requires=[
         'ZODB3 >= 3.8dev',
         'zope.interface',
         'setuptools',
-        
+        'six',
         'zope.testing',
-        ],
-    extras_require={'test':'zc.relationship >= 2.0c1'},
-    )
+    ],
+    extras_require={'test': 'zc.relationship >= 2.0c1'},
+)

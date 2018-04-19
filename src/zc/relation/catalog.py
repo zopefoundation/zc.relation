@@ -14,16 +14,16 @@
 import copy
 import sys
 
+import zope.interface
+import zope.interface.interfaces
+
 import BTrees
 import BTrees.check
 import BTrees.Length
 import persistent
 import persistent.list
 import persistent.wref
-
-import zope.interface
-import zope.interface.interfaces
-
+import six
 from zc.relation import interfaces
 
 ##############################################################################
@@ -54,7 +54,7 @@ def multiunion(sets, data):
 
 def getModuleTools(module):
     return dict(
-        (nm, getattr(module, nm, None)) for nm in 
+        (nm, getattr(module, nm, None)) for nm in
         ('BTree', 'TreeSet', 'Bucket', 'Set',
          'intersection', 'multiunion', 'union', 'difference'))
 
@@ -111,8 +111,8 @@ def any(*args):
 # the marker that shows that a path is circular
 #
 
+@zope.interface.implementer(interfaces.ICircularRelationPath)
 class CircularRelationPath(tuple):
-    zope.interface.implements(interfaces.ICircularRelationPath)
 
     def __new__(kls, elements, cycled):
         res = super(CircularRelationPath, kls).__new__(kls, elements)
@@ -124,8 +124,8 @@ class CircularRelationPath(tuple):
 ##############################################################################
 # the relation catalog
 
+@zope.interface.implementer(interfaces.ICatalog)
 class Catalog(persistent.Persistent):
-    zope.interface.implements(interfaces.ICatalog)
 
     family = BTrees.family32
     _listeners = _queryFactories = _searchIndexes = ()
@@ -611,6 +611,7 @@ class Catalog(persistent.Persistent):
                 data = dataset[key] = (
                     BTrees.Length.Length(), self._relTools['TreeSet']())
             res = data[1].insert(relToken)
+
             assert res, 'Internal error: relToken existed in data'
             data[0].change(1)
 
@@ -833,7 +834,7 @@ class Catalog(persistent.Persistent):
                'internal error: parse expects query and targetQuery '
                'to already be normalized (to OO.Bucket.')
         if maxDepth is not None and (
-            not isinstance(maxDepth, (int, long)) or maxDepth < 1):
+            not isinstance(maxDepth, six.integer_types) or maxDepth < 1):
             raise ValueError('maxDepth must be None or a positive integer')
         if getQueries is not None:
             queries = getQueries(())
@@ -874,7 +875,7 @@ class Catalog(persistent.Persistent):
 
     def getRelationModuleTools(self):
         return self._relTools
-    
+
     def getValueModuleTools(self, name):
         return self._attrs[name]
 
@@ -902,7 +903,7 @@ class Catalog(persistent.Persistent):
         while stack:
             tokenChain, relDataIter = stack[0]
             try:
-                relToken = relDataIter.next()
+                relToken = next(relDataIter)
             except StopIteration:
                 stack.pop(0)
             else:
@@ -913,7 +914,7 @@ class Catalog(persistent.Persistent):
                 walkFurther = maxDepth is None or len(tokenChain) < maxDepth
                 if getQueries is not None and (walkFurther or findCycles):
                     oldInputs = frozenset(tokenChain)
-                    next = set()
+                    _next = set()
                     cycled = []
                     for q in getQueries(tokenChain):
                         relData = self._relData(q)
@@ -923,9 +924,9 @@ class Catalog(persistent.Persistent):
                                 # it's a cycle
                                 cycled.append(q)
                             elif walkFurther:
-                                next.update(relData)
-                    if walkFurther and next:
-                        stack.append((tokenChain, iter(next)))
+                                _next.update(relData)
+                    if walkFurther and _next:
+                        stack.append((tokenChain, iter(_next)))
                     if cycled:
                         tokenChain = CircularRelationPath(
                             tokenChain, cycled)
@@ -1158,11 +1159,11 @@ class Catalog(persistent.Persistent):
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         try:
-            self.yieldRelationTokenChains(
+            next(self.yieldRelationTokenChains(
                 *self._parse(
                     query, maxDepth, filter, targetQuery,
                     targetFilter, getQueries) +
-                (False,)).next()
+                (False,)))
         except StopIteration:
             return False
         else:
