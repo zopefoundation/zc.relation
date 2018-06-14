@@ -4,9 +4,17 @@ python:
     - 3.5
     - 3.6
 install:
+    - pip install coveralls coverage
     - python bootstrap.py
     - bin/buildout
 script:
-    - bin/test -v1
+    - coverage run bin/test -v1
+after_success:
+    - coverage combine
+    - coveralls
 notifications:
     email: false
+cache:
+  pip: true
+  directories:
+    - eggs/

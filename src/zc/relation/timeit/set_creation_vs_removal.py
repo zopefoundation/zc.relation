@@ -122,7 +122,7 @@ for k, v in d.items():
         continue
     d[k[:-7]] = v - control_result
 
-print '''
+print('''
 control: %(control_result)s
 
 (the following results have the control subtracted)
@@ -145,4 +145,4 @@ len_ten: %(len_ten)s
 len_hundred: %(len_hundred)s
 len_thousand: %(len_thousand)s
 len_tenthousand: %(len_tenthousand)s
-''' % d
+''' % d)

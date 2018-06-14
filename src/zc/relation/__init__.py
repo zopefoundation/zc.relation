@@ -11,4 +11,4 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from zc.relation.catalog import RELATION
+from zc.relation.catalog import RELATION  # noqa

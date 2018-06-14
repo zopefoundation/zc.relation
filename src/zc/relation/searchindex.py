@@ -137,14 +137,14 @@ class TransposingTransitiveMembership(persistent.Persistent):
             getQueries = self.factory(dict(reverseQuery), self.catalog)
             tokens.update(chain[-1] for chain in
                           self.catalog.yieldRelationTokenChains(
-                            reverseQuery, ((token,),), None, None, None,
-                            getQueries))
+                              reverseQuery, ((token,),), None, None, None,
+                              getQueries))
         if remove:
             tokens.remove(token)
             self.index.pop(token, None)
             for ix in self.names.values():
                 ix.pop(token, None)
-        # because of the possibilty of cycles involving this token in the
+        # because of the possibility of cycles involving this token in the
         # previous state, we first clean out all of the items "above"
         for token in tokens:
             self.index.pop(token, None)
@@ -155,7 +155,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
             ((self.forward, None),) + self.factory.static)
         getQueries = self.factory(query, self.catalog)
         for token in tokens:
-            if token in self.index: # must have filled it in during a cycle
+            if token in self.index:  # must have filled it in during a cycle
                 continue
             stack = [[token, None, set(), [], set((token,)), False]]
             while stack:
@@ -229,13 +229,13 @@ class TransposingTransitiveMembership(persistent.Persistent):
 
     def relationAdded(self, token, catalog, additions):
         if token in self.index and not self.update.intersection(additions):
-            return # no changes; don't do work
+            return  # no changes; don't do work
         self._index(token)
 
     def relationModified(self, token, catalog, additions, removals):
         if (token in self.index and not self.update.intersection(additions) and
-            not self.update.intersection(removals)):
-            return # no changes; don't do work
+                not self.update.intersection(removals)):
+            return  # no changes; don't do work
         self._index(token, removals)
 
     def relationRemoved(self, token, catalog, removals):
@@ -277,7 +277,6 @@ class Intransitive(persistent.Persistent):
     see tokens.txt for an example.
     """
     # XXX Rename to Direct?
-
 
     index = catalog = name = queryFactory = None
     update = frozenset()
@@ -340,7 +339,7 @@ class Intransitive(persistent.Persistent):
     def _index(self, token, catalog, additions=None, removals=None,
                removed=False):
         if ((not additions or not self.update.intersection(additions)) and
-            (not removals or not self.update.intersection(removals))):
+                (not removals or not self.update.intersection(removals))):
             return
         if additions is None:
             additions = {}
@@ -355,7 +354,8 @@ class Intransitive(persistent.Persistent):
         if self.queryFactory is not None:
             getQueries = self.queryFactory(dquery, self.catalog)
         else:
-            getQueries = lambda empty: (query,)
+            def getQueries(empty):
+                return (query,)
         res = zc.relation.catalog.multiunion(
             (self.catalog.getRelationTokens(q) for q in getQueries(())),
             self.catalog.getRelationModuleTools())
@@ -458,7 +458,7 @@ class Intransitive(persistent.Persistent):
         query = tuple(query.items())
         for nm, v in query:
             if isinstance(v, zc.relation.catalog.Any):
-                return None # TODO open up
+                return None  # TODO open up
         res = self.index.get(query)
         if res is None:
             if self.name is None:

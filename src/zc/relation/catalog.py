@@ -40,6 +40,7 @@ RELATION = None
 # helpers
 #
 
+
 def multiunion(sets, data):
     sets = tuple(s for s in sets if s)  # bool is appropriate here
     if not sets:
@@ -52,11 +53,13 @@ def multiunion(sets, data):
             res = data['union'](res, s)
     return res
 
+
 def getModuleTools(module):
     return dict(
         (nm, getattr(module, nm, None)) for nm in
         ('BTree', 'TreeSet', 'Bucket', 'Set',
          'intersection', 'multiunion', 'union', 'difference'))
+
 
 def getMapping(tools):
     if tools['TreeSet'].__name__[0] == 'I':
@@ -68,12 +71,14 @@ def getMapping(tools):
         Mapping = BTrees.family32.OO.BTree
     return Mapping
 
+
 class Ref(persistent.Persistent):
     def __init__(self, ob):
         self.ob = ob
 
     def __call__(self):
         return self.ob
+
 
 def createRef(ob):
     if isinstance(ob, persistent.Persistent):
@@ -84,6 +89,7 @@ def createRef(ob):
 ##############################################################################
 # Any and any
 #
+
 
 class Any(object):
     def __init__(self, source):
@@ -104,6 +110,7 @@ class Any(object):
             self.__class__.__module__, self.__class__.__name__,
             tuple(sorted(self.source)))
 
+
 def any(*args):
     return Any(args)
 
@@ -111,18 +118,21 @@ def any(*args):
 # the marker that shows that a path is circular
 #
 
+
 @zope.interface.implementer(interfaces.ICircularRelationPath)
 class CircularRelationPath(tuple):
 
-    def __new__(kls, elements, cycled):
-        res = super(CircularRelationPath, kls).__new__(kls, elements)
+    def __new__(cls, elements, cycled):
+        res = super(CircularRelationPath, cls).__new__(cls, elements)
         res.cycled = cycled
         return res
+
     def __repr__(self):
         return 'cycle%s' % super(CircularRelationPath, self).__repr__()
 
 ##############################################################################
 # the relation catalog
+
 
 @zope.interface.implementer(interfaces.ICatalog)
 class Catalog(persistent.Persistent):
@@ -153,7 +163,7 @@ class Catalog(persistent.Persistent):
         self._relLength = BTrees.Length.Length()
         self._relTokens = self._relTools['TreeSet']()
         # private; only mutate via indexValue and unindexValue
-        self._attrs = _attrs = self.family.OO.Bucket() # _attrs name is legacy
+        self._attrs = self.family.OO.Bucket()  # _attrs name is legacy
 
     # The code is divided into the following sections by ReST-like headers:
     #
@@ -238,7 +248,7 @@ class Catalog(persistent.Persistent):
                             dest.append(info[:3] + (cix,))
             res._searchIndexes = tuple(indexes)
         for l in self._listeners:
-            cl = l.sourceCopied(self, res)
+            l.sourceCopied(self, res)
         return res
 
     # Value Indexes
@@ -258,7 +268,7 @@ class Catalog(persistent.Persistent):
         value_index_info['load'] = load
         value_index_info['multiple'] = multiple
         if (value_index_info['dump'] is None) \
-            ^ (value_index_info['load'] is None):
+                ^ (value_index_info['load'] is None):
             raise ValueError(
                 "either both of 'dump' and 'load' must be None, or "
                 "neither")
@@ -397,8 +407,12 @@ class Catalog(persistent.Persistent):
         if self._searchIndexMatches is None:
             self._searchIndexMatches = self.family.OO.Bucket()
         keys = set()
-        for (name, query_names, static_values, maxDepth, filter, queryFactory
-            ) in matches:
+        for (name,
+             query_names,
+             static_values,
+             maxDepth,
+             filter,
+             queryFactory) in matches:
             if name is None:
                 name = ''
                 rel_bool = True
@@ -539,8 +553,8 @@ class Catalog(persistent.Persistent):
         else:
             # new token
             for value_index_info in self._attrs.values():
-                additions[value_index_info['name']] = self._indexNew(relToken,
-                    rel, value_index_info)
+                additions[value_index_info['name']] = self._indexNew(
+                    relToken, rel, value_index_info)
             self._relTokens.insert(relToken)
             self._relLength.change(1)
             for l in self._iterListeners():
@@ -783,10 +797,10 @@ class Catalog(persistent.Persistent):
         for (c_filter, c_queryFactory,
              c_static_values, ix) in self._searchIndexMatches.get(key, ()):
             if (c_filter != filter or
-                c_queryFactory != queryFactory):
+                    c_queryFactory != queryFactory):
                 continue
             for k, v in c_static_values:
-                if query[k] != v: # we want a precise match here
+                if query[k] != v:  # we want a precise match here
                     continue
             res = ix.getResults(
                 None, query, maxDepth, filter, queryFactory)
@@ -800,10 +814,10 @@ class Catalog(persistent.Persistent):
                             res, targetData)
                     if targetFilter is not None:
                         targetCache = {}
-                        res = (rel for rel in res if
-                               targetFilter(
-                                [rel], query, self,
-                                targetCache))
+                        res = (rel
+                               for rel in res
+                               if targetFilter(
+                                   [rel], query, self, targetCache))
                 return res
 
     def _iterListeners(self):
@@ -831,10 +845,10 @@ class Catalog(persistent.Persistent):
                getQueries):
         assert (isinstance(query, BTrees.family32.OO.Bucket) and
                 isinstance(targetQuery, BTrees.family32.OO.Bucket)), (
-               'internal error: parse expects query and targetQuery '
-               'to already be normalized (to OO.Bucket.')
+                    'internal error: parse expects query and targetQuery '
+                    'to already be normalized (to OO.Bucket.')
         if maxDepth is not None and (
-            not isinstance(maxDepth, six.integer_types) or maxDepth < 1):
+                not isinstance(maxDepth, six.integer_types) or maxDepth < 1):
             raise ValueError('maxDepth must be None or a positive integer')
         if getQueries is not None:
             queries = getQueries(())
@@ -846,6 +860,7 @@ class Catalog(persistent.Persistent):
         relData = (r for r in (self._relData(q) for q in queries) if r)
         if filter is not None:
             filterCache = {}
+
             def checkFilter(relchain, query):
                 return filter(relchain, query, self, filterCache)
         else:
@@ -855,7 +870,7 @@ class Catalog(persistent.Persistent):
         if targetQuery:
             targetData = self._relData(targetQuery)
             if not targetData:
-                relData = () # shortcut
+                relData = ()  # shortcut
             else:
                 if targetFilter is not None:
                     def checkTargetFilter(relchain, query):
@@ -909,7 +924,7 @@ class Catalog(persistent.Persistent):
             else:
                 tokenChain += (relToken,)
                 if checkFilter is not None and not checkFilter(
-                    tokenChain, query):
+                        tokenChain, query):
                     continue
                 walkFurther = maxDepth is None or len(tokenChain) < maxDepth
                 if getQueries is not None and (walkFurther or findCycles):
@@ -931,7 +946,7 @@ class Catalog(persistent.Persistent):
                         tokenChain = CircularRelationPath(
                             tokenChain, cycled)
                 if (checkTargetFilter is None or
-                    checkTargetFilter(tokenChain, query)):
+                        checkTargetFilter(tokenChain, query)):
                     yield tokenChain
 
     # Main search API
@@ -943,14 +958,14 @@ class Catalog(persistent.Persistent):
         data = self._attrs.get(name)
         if data is None:
             raise ValueError('name not indexed', name)
-        query = BTrees.family32.OO.Bucket(query) # sorts on key
+        query = BTrees.family32.OO.Bucket(query)  # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         targetQuery = BTrees.family32.OO.Bucket(targetQuery)
         if (((maxDepth is None and queryFactory is None)
-             or maxDepth==1) and filter is None and targetFilter is None):
+             or maxDepth == 1) and filter is None and targetFilter is None):
             # return a set
             if not query and not targetQuery:
                 return self._name_TO_mapping[name]
@@ -982,10 +997,12 @@ class Catalog(persistent.Persistent):
                 query_names = tuple(query)
             if not targetQuery and targetFilter is None:
                 key = (False, name, relation_query, query_names, maxDepth or 0)
-                for (c_filter, c_queryFactory, c_static_values, ix
-                    ) in self._searchIndexMatches.get(key, ()):
+                for (c_filter,
+                     c_queryFactory,
+                     c_static_values,
+                     ix) in self._searchIndexMatches.get(key, ()):
                     if (c_filter != filter or
-                        c_queryFactory != queryFactory):
+                            c_queryFactory != queryFactory):
                         continue
                     for k, v in c_static_values:
                         if query[k] != v:
@@ -1007,7 +1024,7 @@ class Catalog(persistent.Persistent):
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         return self._yieldValueTokens(
-            name, *self._parse( # query and targetQuery normalized above
+            name, *self._parse(  # query and targetQuery normalized above
                 query, maxDepth, filter, targetQuery, targetFilter,
                 getQueries))
 
@@ -1025,22 +1042,22 @@ class Catalog(persistent.Persistent):
             return (resolve(t, self, cache) for t in res)
 
     def _yieldValueTokens(
-        self, name, query, relData, maxDepth, checkFilter,
-        checkTargetFilter, getQueries, yieldSets=False):
+            self, name, query, relData, maxDepth, checkFilter,
+            checkTargetFilter, getQueries, yieldSets=False):
         # this is really an internal bit of findValueTokens, and is only
         # used there.
         relSeen = set()
         objSeen = set()
         for path in self.yieldRelationTokenChains(
-            query, relData, maxDepth, checkFilter, checkTargetFilter,
-            getQueries, findCycles=False):
+                query, relData, maxDepth, checkFilter, checkTargetFilter,
+                getQueries, findCycles=False):
             relToken = path[-1]
             if relToken not in relSeen:
                 relSeen.add(relToken)
                 outputSet = self._reltoken_name_TO_objtokenset.get(
                     (relToken, name))
                 if outputSet:
-                    if yieldSets: # this is needed for zc.relationship!!!
+                    if yieldSets:  # this is needed for zc.relationship!!!
                         yield outputSet
                     else:
                         for token in outputSet:
@@ -1051,15 +1068,17 @@ class Catalog(persistent.Persistent):
     def findRelationTokens(self, query=(), maxDepth=None, filter=None,
                            targetQuery=(), targetFilter=None,
                            queryFactory=None, ignoreSearchIndex=False):
-        query = BTrees.family32.OO.Bucket(query) # sorts on key
+        query = BTrees.family32.OO.Bucket(query)  # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         targetQuery = BTrees.family32.OO.Bucket(targetQuery)
         if (((maxDepth is None and queryFactory is None)
-             or maxDepth==1)
-            and filter is None and not targetQuery and targetFilter is None):
+                or maxDepth == 1)
+                and filter is None
+                and not targetQuery
+                and targetFilter is None):
             res = self._relData(query)
             if res is None:
                 res = self._relTools['Set']()
@@ -1081,7 +1100,8 @@ class Catalog(persistent.Persistent):
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
         seen = self._relTools['Set']()
-        return (res[-1] for res in self.yieldRelationTokenChains(
+        return (res[-1]
+                for res in self.yieldRelationTokenChains(
                     *self._parse(
                         query, maxDepth, filter, targetQuery,
                         targetFilter, getQueries) +
@@ -1089,17 +1109,17 @@ class Catalog(persistent.Persistent):
                 if seen.insert(res[-1]))
 
     def findRelations(self, query=(), maxDepth=None, filter=None,
-                          targetQuery=(), targetFilter=None,
-                          queryFactory=None, ignoreSearchIndex=False):
+                      targetQuery=(), targetFilter=None,
+                      queryFactory=None, ignoreSearchIndex=False):
         return self.resolveRelationTokens(
             self.findRelationTokens(
                 query, maxDepth, filter, targetQuery, targetFilter,
                 queryFactory, ignoreSearchIndex))
 
     def findRelationChains(self, query, maxDepth=None, filter=None,
-                               targetQuery=(), targetFilter=None,
-                               queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query) # sorts on key
+                           targetQuery=(), targetFilter=None,
+                           queryFactory=None):
+        query = BTrees.family32.OO.Bucket(query)  # sorts on key
         queryFactory, getQueries = self._getQueryFactory(
             query, queryFactory)
         return self._yieldRelationChains(*self._parse(
@@ -1107,15 +1127,14 @@ class Catalog(persistent.Persistent):
             targetFilter, getQueries))
 
     def _yieldRelationChains(self, query, relData, maxDepth, checkFilter,
-                                 checkTargetFilter, getQueries,
-                                 findCycles=True):
+                             checkTargetFilter, getQueries, findCycles=True):
         # this is really an internal bit of findRelationChains, and is only
         # used there.
         resolve = self._relTools['load']
         cache = {}
         for p in self.yieldRelationTokenChains(
-            query, relData, maxDepth, checkFilter, checkTargetFilter,
-            getQueries, findCycles):
+                query, relData, maxDepth, checkFilter, checkTargetFilter,
+                getQueries, findCycles):
             t = (resolve(t, self, cache) for t in p)
             if interfaces.ICircularRelationPath.providedBy(p):
                 res = CircularRelationPath(t, p.cycled)
@@ -1124,9 +1143,9 @@ class Catalog(persistent.Persistent):
             yield res
 
     def findRelationTokenChains(self, query, maxDepth=None, filter=None,
-                                    targetQuery=(), targetFilter=None,
-                                    queryFactory=None):
-        query = BTrees.family32.OO.Bucket(query) # sorts on key
+                                targetQuery=(), targetFilter=None,
+                                queryFactory=None):
+        query = BTrees.family32.OO.Bucket(query)  # sorts on key
         queryFactory, getQueries = self._getQueryFactory(
             query, queryFactory)
         return self.yieldRelationTokenChains(*self._parse(
@@ -1134,9 +1153,9 @@ class Catalog(persistent.Persistent):
             targetFilter, getQueries))
 
     def canFind(self, query, maxDepth=None, filter=None,
-                 targetQuery=(), targetFilter=None,
-                 queryFactory=None, ignoreSearchIndex=False):
-        query = BTrees.family32.OO.Bucket(query) # sorts on key
+                targetQuery=(), targetFilter=None,
+                queryFactory=None, ignoreSearchIndex=False):
+        query = BTrees.family32.OO.Bucket(query)  # sorts on key
         getQueries = None
         if queryFactory is None:
             queryFactory, getQueries = self._getQueryFactory(

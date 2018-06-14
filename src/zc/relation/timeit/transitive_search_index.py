@@ -3,8 +3,8 @@ The goal of this file is to determine how well the transposing transitive
 index helps searches.
 
 The result of the first test has three big sections, one for
-`findRelationTokens`, one for `findValueTokens`, and one for `canFind`. 
-Within each section, we have six searches, each broader than the last. 
+`findRelationTokens`, one for `findValueTokens`, and one for `canFind`.
+Within each section, we have six searches, each broader than the last.
 A 'brute' result is a result without a search index.  A 'relation'
 result uses a search index without a configured value index.  A 'value'
 result uses a search index with a configured value index.  'relation'
@@ -180,7 +180,7 @@ the write performance is when you have these indexes.
 useful when you have a query factory that mutates the initial search, as
 in tokens.txt?)
 
-"""
+"""  # noqa
 
 import timeit
 import pprint
@@ -268,7 +268,7 @@ canfind_run_template = '''
 res = catalog.canFind({'token': %d}, targetQuery={'children': 23})
 '''
 
-options = (9,7,5,3,1,0)
+options = (9, 7, 5, 3, 1, 0)
 
 runs = 10000
 
@@ -284,9 +284,9 @@ for template in (relations_run_template, value_run_template,
         brute_globs = {}
         relation_globs = {}
         value_globs = {}
-        exec brute_setup + run in brute_globs
-        exec relation_index_setup + run in relation_globs
-        exec value_index_setup + run in value_globs
+        exec(brute_setup + run, brute_globs)
+        exec(relation_index_setup + run, relation_globs)
+        exec(value_index_setup + run, value_globs)
         brute = brute_globs['res']
         relation = relation_globs['res']
         value = value_globs['res']
@@ -318,12 +318,12 @@ for template in (relations_run_template, value_run_template,
             'value',
             min(timeit.Timer(
                 run, value_index_setup).repeat(3, runs)) - control_result))
-        
+
     d.append('------------------')
     d.append('------------------')
 
 
-print '                               Test 1\n\n'
+print('                               Test 1\n\n')
 pprint.pprint(d)
 
 reverse_setup = brute_setup + """
@@ -340,14 +340,14 @@ value_run_template = '''
 res = catalog.findValueTokens('children', {'token': %d})
 '''
 
-print '\n\n                               Test 2\n\n'
+print('\n\n                               Test 2\n\n')
 
 control = timeit.Timer('res = catalog.__len__()', brute_setup)
 control_result = min(control.repeat(3, runs))
 d = [('control_result', control_result)]
 
 for template in (relations_run_template, value_run_template):
-    for o in (9,0):
+    for o in (9, 0):
         run = template % (o,)
         d.append('**** %s ****' % (run.strip(),))
         d.append((
@@ -358,9 +358,8 @@ for template in (relations_run_template, value_run_template):
             'index',
             min(timeit.Timer(
                 run, reverse_setup).repeat(3, runs)) - control_result))
-        
+
     d.append('------------------')
     d.append('------------------')
 
 pprint.pprint(d)
-        

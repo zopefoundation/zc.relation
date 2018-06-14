@@ -28,7 +28,7 @@ _marker = object()
 class TransposingTransitive(persistent.Persistent):
 
     def __init__(self, name1, name2, static=()):
-        self.names = [name1, name2] # a list so we can use index
+        self.names = [name1, name2]  # a list so we can use index
         if getattr(static, 'items', None) is not None:
             static = static.items()
         self.static = tuple(sorted(static))
