@@ -15,6 +15,7 @@
 """
 import zope.interface
 
+
 class ICircularRelationPath(zope.interface.Interface):
     """A tuple that has a circular relation in the very final element of
     the path."""
@@ -22,19 +23,21 @@ class ICircularRelationPath(zope.interface.Interface):
     cycled = zope.interface.Attribute(
         """a list of the searches needed to continue the cycle""")
 
+
 class IQueryFactory(zope.interface.Interface):
     def __call__(query, catalog, cache):
         """if query matches, return `getQueries` callable; else return None.
-        
+
         A getQueries callable receives a relchain.  The last relation token in
         relchain is the most recent, and if you are using search indexes may be
         the only reliable one.  Return an iterable of queries to search
         further from given relchain.
-        
+
         IMPORTANT: the getQueries is first called with an empty tuple.  This
         shou normally yield the original query, but can yield one or more
         arbitrary queries as desired.
         """
+
 
 class IFilter(zope.interface.Interface):
     def __call__(relchain, query, index, cache):
@@ -45,18 +48,19 @@ class IFilter(zope.interface.Interface):
         methods.  Cache is a dictionary that will be used throughout a given
         search."""
 
+
 class IMessageListener(zope.interface.Interface):
 
     def relationAdded(token, catalog, additions):
         """message: relation token has been added to catalog.
-        
+
         additions is a dictionary of {value name : iterable of added value
         tokens}.
         """
 
     def relationModified(token, catalog, additions, removals):
         """message: relation token has been updated in catalog.
-        
+
         additions is a dictionary of {value name : iterable of added value
         tokens}.
         removals is a dictionary of {value name : iterable of removed value
@@ -65,13 +69,14 @@ class IMessageListener(zope.interface.Interface):
 
     def relationRemoved(token, catalog, removals):
         """message: relation token has been removed from catalog.
-        
+
         removals is a dictionary of {value name : iterable of removed value
         tokens}.
         """
 
     def sourceCleared(catalog):
         """message: the catalog has been cleared."""
+
 
 class IListener(IMessageListener):
 
@@ -84,9 +89,10 @@ class IListener(IMessageListener):
 
     def sourceCopied(original, copy):
         """message: the given original is making a copy.
-        
+
         Can install listeners in the copy, if desired.
         """
+
 
 class ISearchIndex(IMessageListener):
 
@@ -95,13 +101,13 @@ class ISearchIndex(IMessageListener):
 
     def setCatalog(catalog):
         """set the search index to be using the given catalog, return matches.
-        
+
         Should immediately being index up-to-date if catalog has content.
-        
+
         if index already has a catalog, raise an error.
-        
+
         If provided catalog is None, clear catalog and indexes.
-        
+
         Returned matches should be iterable of tuples of (search name or None,
         query names, static values, maxDepth, filter, queryFactory).  Only
         searches matching one of these tuples will be sent to the search
@@ -110,11 +116,12 @@ class ISearchIndex(IMessageListener):
 
     def getResults(name, query, maxDepth, filter, queryFactory):
         """return results for search if available, and None if not
-        
+
         Returning a non-None value means that this search index claims the
         search.  No other search indexes will be consulted, and the given
         results are believed to be accurate.
         """
+
 
 class ICatalog(zope.interface.Interface):
 
@@ -151,19 +158,19 @@ class ICatalog(zope.interface.Interface):
     def addValueIndex(element, dump=None, load=None, btree=None,
                       multiple=False, name=None):
         """add a value index for given element.
-        
+
         element may be interface element or callable.  Here are the other
         arguments.
 
         - `dump`, the tokenizer is a callable taking (obj, index, cache)
           and returning a token.  If it is None, that means that the value
           is already a sufficient token.
-        
+
         - `load` is the token resolver, a callable taking (token, index, cache)
           to return the object which the token represents.  If it is None,
           that means that the token is the value.  If you specify None
           for `dump` or `load`, you must also specify None for the other.
-        
+
         - `btree` is the btree module to use to store and process the tokens,
           such as BTrees.OOBTree.  Defaults to catalog.family.IFBTree.
 
@@ -176,7 +183,7 @@ class ICatalog(zope.interface.Interface):
 
     def iterValueIndexInfo():
         """return iterable of dicts, each with data for added value indexes.
-        
+
         See arguments to addValueIndex for keys in dicts."""
 
     def removeValueIndex(name):
@@ -184,9 +191,9 @@ class ICatalog(zope.interface.Interface):
 
     def addListener(listener):
         """add a listener.
-        
-        Listener is expected to fulfill IListener.
-        
+
+        Listener is expected to fulfil IListener.
+
         If listener is Persistent, make a weak reference to it."""
 
     def iterListeners():
@@ -215,7 +222,7 @@ class ICatalog(zope.interface.Interface):
 
     def getRelationModuleTools():
         """return dict with useful BTree tools.
-        
+
         keys will include 'BTree', 'Bucket', 'Set', 'TreeSet', 'difference',
         'dump', 'intersection', 'load', and 'union'.  may also include
         'multiunion'.
@@ -223,7 +230,7 @@ class ICatalog(zope.interface.Interface):
 
     def getValueModuleTools(name):
         """return dict with useful BTree tools for named value index.
-        
+
         keys will include 'BTree', 'Bucket', 'Set', 'TreeSet', 'difference',
         'dump', 'intersection', 'load', and 'union'.  may also include
         'multiunion' and other keys for internal use.
@@ -238,26 +245,26 @@ class ICatalog(zope.interface.Interface):
         a maxDepth of 1, and no other arguments other than the optional
         query, except that if there are no matches, `findRelationTokens`
         returns an empty set (so it *always* returns an iterable). """
-    
+
     def getValueTokens(name, reltoken=None):
         """return value tokens for name, limited to relation token if given.
-    
+
         returns a none if no tokens.
-    
+
         This is identical to `findValueTokens`except that if there are
         no matches, `findValueTokens` returns an empty set (so it
         *always* returns an iterable) """
-    
+
     def yieldRelationTokenChains(query, relData, maxDepth, checkFilter,
                                  checkTargetFilter, getQueries,
                                  findCycles=True):
         """a search workhorse for searches that use a query factory
-        
+
         TODO: explain. :-/"""
 
     def findValueTokens(
-        name, query=None, maxDepth=None, filter=None, targetQuery=None,
-        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+            name, query=None, maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """find token results for searchTerms.
         - name is the index name wanted for results.
         - if query is None (or evaluates to boolean False), returns the
@@ -267,25 +274,25 @@ class ICatalog(zope.interface.Interface):
         """
 
     def findValues(
-        name, query=None, maxDepth=None, filter=None, targetQuery=None,
-        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+            name, query=None, maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """Like findValueTokens, but resolves value tokens"""
 
     def findRelations(
-        query=(), maxDepth=None, filter=None, targetQuery=None,
-        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+            query=(), maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """Given a single dictionary of {indexName: token}, return an iterable
         of relations that match the query"""
 
     def findRelationTokens(
-        query=(), maxDepth=None, filter=None, targetQuery=None,
-        targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+            query=(), maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """Given a single dictionary of {indexName: token}, return an iterable
         of relation tokens that match the query"""
 
     def findRelationTokenChains(
-        query, maxDepth=None, filter=None, targetQuery=None, targetFilter=None,
-        queryFactory=None):
+            query, maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None):
         """find tuples of relation tokens for searchTerms.
         - query is a dictionary of {indexName: token}
         - maxDepth is None or a positive integer that specifies maximum depth
@@ -307,16 +314,16 @@ class ICatalog(zope.interface.Interface):
         """
 
     def findRelationChains(
-        query, maxDepth=None, filter=None, targetQuery=None, targetFilter=None,
-        queryFactory=None):
+            query, maxDepth=None, filter=None, targetQuery=None,
+            targetFilter=None, queryFactory=None):
         "Like findRelationTokenChains, but resolves relation tokens"
 
     def canFind(query, maxDepth=None, filter=None, targetQuery=None,
-                 targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
+                targetFilter=None, queryFactory=None, ignoreSearchIndex=False):
         """boolean if there is any result for the given search.
-        
+
         Same arguments as findRelationChains.
-        
+
         The general algorithm for using the arguments is this:
         try to yield a single chain from findRelationTokenChains with the
         given arguments.  If one can be found, return True, else False."""
