@@ -9,6 +9,7 @@ TEST_THIS_REST_BEFORE_REGISTERING.txt
 __pycache__/
 bin/
 build/
+coverage.xml
 develop-eggs/
 dist/
 eggs/
