@@ -2,9 +2,6 @@
 Working with Search Indexes: zc.relation Catalog Extended Example
 =================================================================
 
-.. contents::
-   :local:
-
 Introduction
 ============
 
@@ -16,7 +13,7 @@ also describes an advanced use case.
 
 As we have seen in the other documents, the relation catalog supports
 search indexes.  These can return the results of any search, as desired.
- Of course, the intent is that you supply an index that optimizes the
+Of course, the intent is that you supply an index that optimizes the
 particular searches it claims.
 
 The searchindex module supplies a few search indexes, optimizing

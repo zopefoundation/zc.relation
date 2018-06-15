@@ -91,6 +91,9 @@ setup(
     author_email='gary@zope.com',
     description=text("README.txt"),
     long_description=text('src/zc/relation/README.txt',
+                          'src/zc/relation/tokens.txt',
+                          'src/zc/relation/searchindex.txt',
+                          'src/zc/relation/optimization.txt',
                           'src/zc/relation/CHANGES.txt'),
     classifiers=[
         'Programming Language :: Python',

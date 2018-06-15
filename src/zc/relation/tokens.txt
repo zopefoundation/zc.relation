@@ -2,9 +2,6 @@
 Tokens and Joins: zc.relation Catalog Extended Example
 ======================================================
 
-.. contents::
-   :local:
-
 Introduction and Set Up
 =======================
 
@@ -1309,6 +1306,6 @@ TODO make sure that intransitive copy looks the way we expect
 .. ......... ..
 
 
-.. [#silliness] In _2001: A Space Odyssey_, many people believe the name HAL
+.. [#silliness] In "2001: A Space Odyssey", many people believe the name HAL
     was chosen because it was ROT25 of IBM....  I cheat a bit sometimes and
     use ROT1 because the result sounds better.

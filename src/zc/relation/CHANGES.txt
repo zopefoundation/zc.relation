@@ -1,10 +1,3 @@
-======
-Issues
-======
-
-- Tests are currently broken. Do neither run on Python 2.4, 2.5 nor 2.6.
-
-
 =======
 Changes
 =======
@@ -13,9 +6,7 @@ Changes
 1.1 (unreleased)
 ================
 
-- Python 3 compatibility: use the implementer decorator,
-  fix print statement and StringIO in setup.py
-  [ale-rt]
+- Add support for Python 3.5 and 3.6.
 
 
 1.0 (2008-04-23)

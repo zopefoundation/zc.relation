@@ -3,7 +3,6 @@ Relation Catalog
 ================
 
 .. contents::
-   :local:
 
 Overview
 ========
