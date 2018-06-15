@@ -81,7 +81,7 @@ def text(*args, **kwargs):
 
 setup(
     name="zc.relation",
-    version="1.1.dev0",
+    version='1.1',
     packages=find_packages('src'),
     include_package_data=True,
     package_dir={'': 'src'},
