@@ -5,7 +5,7 @@ Working with Search Indexes: zc.relation Catalog Extended Example
 Introduction
 ============
 
-This document assumes you have read the README.txt document, and want to learn
+This document assumes you have read the README.rst document, and want to learn
 a bit more by example. In it, we will explore a set of relations that
 demonstrates most of the aspects of working with search indexes and listeners.
 It will not explain the topics that the other documents already addressed. It

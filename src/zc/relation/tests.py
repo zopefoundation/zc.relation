@@ -35,22 +35,22 @@ def tearDown(test):
 def test_suite():
     res = unittest.TestSuite((
         doctest.DocFileSuite(
-            'README.txt',
+            'README.rst',
             setUp=setUp,
             tearDown=tearDown,
         ),
         doctest.DocFileSuite(
-            'tokens.txt',
+            'tokens.rst',
             setUp=setUp,
             tearDown=tearDown,
         ),
         doctest.DocFileSuite(
-            'searchindex.txt',
+            'searchindex.rst',
             setUp=setUp,
             tearDown=tearDown,
         ),
         doctest.DocFileSuite(
-            'optimization.txt',
+            'optimization.rst',
             setUp=setUp,
             tearDown=tearDown,
         ),

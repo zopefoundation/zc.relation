@@ -53,7 +53,7 @@ def text(*args, **kwargs):
     # http://docs.python.org/dist/meta-data.html
     tmp = []
     for a in args:
-        if a.endswith('.txt'):
+        if a.endswith('.rst'):
             f = open(os.path.join(*a.split('/')))
             tmp.append(f.read())
             f.close()
@@ -66,7 +66,7 @@ def text(*args, **kwargs):
         res = ''.join(tmp)
     out = kwargs.get('out')
     if out is True:
-        out = 'TEST_THIS_REST_BEFORE_REGISTERING.txt'
+        out = 'TEST_THIS_REST_BEFORE_REGISTERING.rst'
     if out:
         f = open(out, 'w')
         f.write(res)
@@ -89,12 +89,12 @@ setup(
     zip_safe=False,
     author='Gary Poster',
     author_email='gary@zope.com',
-    description=text("README.txt"),
-    long_description=text('src/zc/relation/README.txt',
-                          'src/zc/relation/tokens.txt',
-                          'src/zc/relation/searchindex.txt',
-                          'src/zc/relation/optimization.txt',
-                          'src/zc/relation/CHANGES.txt'),
+    description=text("README.rst"),
+    long_description=text('src/zc/relation/README.rst',
+                          'src/zc/relation/tokens.rst',
+                          'src/zc/relation/searchindex.rst',
+                          'src/zc/relation/optimization.rst',
+                          'src/zc/relation/CHANGES.rst'),
     classifiers=[
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',

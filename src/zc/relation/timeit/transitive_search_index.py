@@ -178,14 +178,14 @@ the write performance is when you have these indexes.
 
 (I want to write look at the intransitive search too: is it really only
 useful when you have a query factory that mutates the initial search, as
-in tokens.txt?)
+in tokens.rst?)
 
 """  # noqa
 
 import timeit
 import pprint
 
-# see zc/relation/searchindex.txt
+# see zc/relation/searchindex.rst
 
 brute_setup = '''
 import BTrees

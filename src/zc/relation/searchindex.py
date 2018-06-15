@@ -274,7 +274,7 @@ class Intransitive(persistent.Persistent):
     Could be used for transitive searches, but writes would be much more
     expensive than the TransposingTransitive approach.
 
-    see tokens.txt for an example.
+    see tokens.rst for an example.
     """
     # XXX Rename to Direct?
 

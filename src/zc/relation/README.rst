@@ -873,7 +873,7 @@ affect ``findRelationChains``.
 
 The zc.relation package currently includes two kinds of search indexes, one for
 indexing transitive membership searches in a hierarchy and one for intransitive
-searches explored in tokens.txt in this package, which can optimize frequent
+searches explored in tokens.rst in this package, which can optimize frequent
 searches on complex queries or can effectively change the meaning of an
 intransitive search. Other search index implementations and approaches may be
 added in the future.
@@ -887,7 +887,7 @@ searches seen above that specify a 'supervisor'.
     ...         'supervisor', zc.relation.RELATION))
 
 The ``zc.relation.RELATION`` describes how to walk back up the chain. Search
-indexes are explained in reasonable detail in searchindex.txt.
+indexes are explained in reasonable detail in searchindex.rst.
 
 Now that we have added the index, we can search again.  The result this
 time is already computed, so, at least when you ask for tokens, it
@@ -1926,13 +1926,13 @@ Next Steps
 If you want to read more, next steps depend on how you like to learn.  Here
 are some of the other documents in the zc.relation package.
 
-:optimization.txt:
+:optimization.rst:
     Best practices for optimizing your use of the relation catalog.
 
-:searchindex.txt:
+:searchindex.rst:
     Queries factories and search indexes: from basics to nitty gritty details.
 
-:tokens.txt:
+:tokens.rst:
     This document explores the details of tokens.  All God's chillun
     love tokens, at least if God's chillun are writing non-toy apps
     using zc.relation.  It includes discussion of the token helpers that

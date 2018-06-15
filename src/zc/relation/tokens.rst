@@ -5,7 +5,7 @@ Tokens and Joins: zc.relation Catalog Extended Example
 Introduction and Set Up
 =======================
 
-This document assumes you have read the introductory README.txt and want
+This document assumes you have read the introductory README.rst and want
 to learn a bit more by example. In it, we will explore a more
 complicated set of relations that demonstrates most of the aspects of
 working with tokens.  In particular, we will look at joins, which will
@@ -176,7 +176,7 @@ Now we can create a relation catalog to hold these items.
 
 Now we set up our indexes.  We'll start with just the organizations, and
 set up the catalog with them. This part will be similar to the example
-in README.txt, but will introduce more discussions of optimizations and
+in README.rst, but will introduce more discussions of optimizations and
 tokens.  Then we'll add in the part about roles, and explore queries and
 token-based "joins".
 
