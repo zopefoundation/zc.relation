@@ -81,7 +81,7 @@ def text(*args, **kwargs):
 
 setup(
     name="zc.relation",
-    version="1.1a",
+    version="1.1.dev0",
     packages=find_packages('src'),
     include_package_data=True,
     package_dir={'': 'src'},
@@ -89,6 +89,7 @@ setup(
     zip_safe=False,
     author='Gary Poster',
     author_email='gary@zope.com',
+    url="https://github.com/zopefoundation/zc.relation",
     description=text("README.rst"),
     long_description=text('src/zc/relation/README.rst',
                           'src/zc/relation/tokens.rst',
@@ -96,15 +97,16 @@ setup(
                           'src/zc/relation/optimization.rst',
                           'src/zc/relation/CHANGES.rst'),
     classifiers=[
-        'Programming Language :: Python',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: Implementation :: CPython',
+        'License :: OSI Approved :: Zope Public License',
     ],
     license='ZPL 2.1',
-    keywords="zope zope3",
+    keywords="zope zope3 relation",
     install_requires=[
         'ZODB3 >= 3.8dev',
         'zope.interface',
