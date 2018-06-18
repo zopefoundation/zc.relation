@@ -3,8 +3,8 @@ Changes
 =======
 
 
-1.2 (unreleased)
-================
+1.1.post2 (2018-06-18)
+======================
 
 - Another attempt to fix PyPI page by using correct expected metadata syntax.
 
