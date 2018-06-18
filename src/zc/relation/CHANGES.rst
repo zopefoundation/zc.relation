@@ -6,7 +6,7 @@ Changes
 1.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix PyPI page by using correct ReST syntax.
 
 
 1.1 (2018-06-15)

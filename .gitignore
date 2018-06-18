@@ -5,7 +5,6 @@
 .tox/
 /local/
 /src-dev/
-TEST_THIS_REST_BEFORE_REGISTERING.txt
 __pycache__/
 bin/
 build/

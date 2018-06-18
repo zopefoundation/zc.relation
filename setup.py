@@ -18,65 +18,11 @@ import os
 from setuptools import find_packages
 from setuptools import setup
 
-# generic helpers primarily for the long_description
-try:
-    import docutils
-except ImportError:
-    def validateReST(text):
-        return ''
-else:
-    import docutils.utils
-    import docutils.parsers.rst
-    try:
-        from StringIO import StringIO
-    except ImportError:
-        from io import StringIO
 
-    def validateReST(text):
-        doc = docutils.utils.new_document('validator')
-        # our desired settings
-        doc.reporter.halt_level = 5
-        doc.reporter.report_level = 1
-        stream = doc.reporter.stream = StringIO()
-        # docutils buglets (?)
-        doc.settings.tab_width = 2
-        doc.settings.pep_references = doc.settings.rfc_references = False
-        doc.settings.trim_footnote_reference_space = None
-        # and we're off...
-        parser = docutils.parsers.rst.Parser()
-        parser.parse(text, doc)
-        return stream.getvalue()
-
-
-def text(*args, **kwargs):
-    # note: distutils explicitly disallows unicode for setup values :-/
-    # http://docs.python.org/dist/meta-data.html
-    tmp = []
-    for a in args:
-        if a.endswith('.rst'):
-            f = open(os.path.join(*a.split('/')))
-            tmp.append(f.read())
-            f.close()
-            tmp.append('\n\n')
-        else:
-            tmp.append(a)
-    if len(tmp) == 1:
-        res = tmp[0]
-    else:
-        res = ''.join(tmp)
-    out = kwargs.get('out')
-    if out is True:
-        out = 'TEST_THIS_REST_BEFORE_REGISTERING.rst'
-    if out:
-        f = open(out, 'w')
-        f.write(res)
-        f.close()
-        report = validateReST(res)
-        if report:
-            print(report)
-            raise ValueError('ReST validation error')
-    return res
-# end helpers; below this line should be code custom to this package
+def read(path):
+    """Read the contents of a file system path."""
+    with open(os.path.join(*path.split('/'))) as f:
+        return f.read()
 
 
 setup(
@@ -90,12 +36,14 @@ setup(
     author='Gary Poster',
     author_email='gary@zope.com',
     url="https://github.com/zopefoundation/zc.relation",
-    description=text("README.rst"),
-    long_description=text('src/zc/relation/README.rst',
-                          'src/zc/relation/tokens.rst',
-                          'src/zc/relation/searchindex.rst',
-                          'src/zc/relation/optimization.rst',
-                          'src/zc/relation/CHANGES.rst'),
+    description=read("README.rst"),
+    long_description="\n\n".join([
+        read('src/zc/relation/README.rst'),
+        read('src/zc/relation/tokens.rst'),
+        read('src/zc/relation/searchindex.rst'),
+        read('src/zc/relation/optimization.rst'),
+        read('src/zc/relation/CHANGES.rst'),
+    ]),
     classifiers=[
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',

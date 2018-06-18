@@ -18,14 +18,8 @@ To run tests, run *both* of the following:
 
 Changes should be documented in CHANGES.rst *in the package*.
 
-Before making a release that registers the software to PyPI, run the following:
+Before making a release that registers the software to PyPI, run the
+`longtest` command of the ``zest.releaser`` package to check for errors
+in the ``long_description``.
 
-- ``./bin/py setup.py``
-
-This then creates a file with the following silly name:
-``TEST_THIS_REST_BEFORE_REGISTERING.rst``
-
-As the name suggests, test the file in a ReST tool to make sure docutils
-parses it correctly.
-
-Once this works, go ahead and ``./bin/py setup.py sdist register upload``.
+Once this works, go ahead and ``./bin/py setup.py sdist upload``.
