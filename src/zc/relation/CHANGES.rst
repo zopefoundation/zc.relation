@@ -3,8 +3,8 @@ Changes
 =======
 
 
-1.2 (unreleased)
-================
+1.1.post1 (2018-06-18)
+======================
 
 - Fix PyPI page by using correct ReST syntax.
 
