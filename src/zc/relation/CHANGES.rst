@@ -6,7 +6,7 @@ Changes
 1.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Another attempt to fix PyPI page by using correct expected metadata syntax.
 
 
 1.1.post1 (2018-06-18)

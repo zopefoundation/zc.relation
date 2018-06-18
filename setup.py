@@ -36,7 +36,7 @@ setup(
     author='Gary Poster',
     author_email='gary@zope.com',
     url="https://github.com/zopefoundation/zc.relation",
-    description=read("README.rst"),
+    description="Index intransitive and transitive n-ary relationships.",
     long_description="\n\n".join([
         read('src/zc/relation/README.rst'),
         read('src/zc/relation/tokens.rst'),
