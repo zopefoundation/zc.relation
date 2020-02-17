@@ -46,7 +46,7 @@ accessor, getOrganization, largely to show how to handle methods.
     ...     def getOrganization():
     ...         'return the organization in which this relation operates'
     ...     principal_id = zope.interface.Attribute(
-    ...         'the pricipal id whose roles this relation lists')
+    ...         'the principal id whose roles this relation lists')
     ...     role_ids = zope.interface.Attribute(
     ...         'the role ids that the principal explicitly has in the '
     ...         'organization.  The principal may have other roles via '
