@@ -28,6 +28,15 @@ import zc.relation.searchindex
 _marker = object()
 
 
+class NotEqual(object):
+
+    def __lt__(self, other):
+        return False
+
+    def __gt__(self, other):
+        return False
+
+
 @zope.interface.implementer(zc.relation.interfaces.ISearchIndex)
 class TransposingTransitiveMembership(persistent.Persistent):
     """for searches using zc.relation.queryfactory.TransposingTransitive.
@@ -425,10 +434,10 @@ class Intransitive(persistent.Persistent):
             if self.getValueTokens is not None:
                 res = self.getValueTokens(self, name, token, catalog, source,
                                           additions, removals, removed)
-            if res is None:
+            if res in (None, set()):
                 if name in source:
                     continue
-                res = set((None,))
+                res = {NotEqual()}
                 current = self.catalog.getValueTokens(name, token)
                 if current:
                     res.update(current)

@@ -84,7 +84,7 @@ object, similar to an intid utility. [#faux_intid]_
     ...         if self.object._p_jar is None:
     ...             raise ValueError(
     ...                 'can only compare when both objects have connections')
-    ...         return self.object._p_oid or ''
+    ...         return self.object._p_oid
     ...     def __lt__(self, other):
     ...         # this doesn't work during conflict resolution.  See
     ...         # zope.app.keyreference.persistent, 3.5 release, for current
@@ -834,7 +834,7 @@ values.
     ...         # we only want custom behavior if this is an organization
     ...         if 'principal_id' in source or index.catalog.getValueTokens(
     ...             'principal_id', token):
-    ...             return ''
+    ...             return
     ...         orgs = set((token,))
     ...         orgs.update(index.catalog.findRelationTokens(
     ...             {'part': token}))
@@ -1007,7 +1007,7 @@ make the role_catalog have a .org_catalog attribute, and rely on that.
     ...             return set(index.catalog.findValueTokens(
     ...                 'principal_id', {
     ...                     'organization': zc.relation.catalog.Any(orgs)}))
-    ...     return ''
+    ...
 
 If you are following along in the code and comparing to the originals, you may
 see that this approach is a bit cleaner than the one when the relations were
