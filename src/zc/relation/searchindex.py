@@ -29,8 +29,27 @@ _marker = object()
 
 
 class NotEqual(object):
+    """ A 'something' that doesn't like to be compared to other things,
+    independent of their type.  In Python 3.x `None` can no longer be used
+    here, but we need a default value when injecting items into the b-trees
+    below. Behaves like so:
+
+    >>> foo = NotEqual()
+    >>> assert foo == foo
+    >>> assert not foo < foo
+    >>> assert not foo <= foo
+    >>> assert not foo != foo
+    >>> assert not foo > foo
+    >>> assert not foo >= foo
+    """
 
     def __lt__(self, other):
+        return False
+
+    def __le__(self, other):
+        return False
+
+    def __ge__(self, other):
         return False
 
     def __gt__(self, other):
