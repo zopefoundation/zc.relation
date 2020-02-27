@@ -6,7 +6,8 @@ Changes
 1.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Fix default for value token now that we cannot compare with `None` anymore.
+  This fixes things for Python 3.x (as made obvious starting with 3.7).
 
 
 1.1.post2 (2018-06-18)
