@@ -203,8 +203,8 @@ class Catalog(persistent.Persistent):
         self._reltoken_name_TO_objtokenset.clear()
         self._relTokens.clear()
         self._relLength.set(0)
-        for l in self._iterListeners():
-            l.sourceCleared(self)
+        for listener in self._iterListeners():
+            listener.sourceCleared(self)
 
     def copy(self, klass=None):
         if klass is None:
@@ -247,8 +247,8 @@ class Catalog(persistent.Persistent):
                         if info[3] is ix:
                             dest.append(info[:3] + (cix,))
             res._searchIndexes = tuple(indexes)
-        for l in self._listeners:
-            l.sourceCopied(self, res)
+        for listener in self._listeners:
+            listener.sourceCopied(self, res)
         return res
 
     # Value Indexes
@@ -304,8 +304,8 @@ class Catalog(persistent.Persistent):
             additions = {}
             additions[name] = (None, self._indexNew(
                 token, load(token, self, cache), value_index_info))
-            for l in self._iterListeners():
-                l.relationModified(token, self, additions, {})
+            for listener in self._iterListeners():
+                listener.relationModified(token, self, additions, {})
         self._fixLegacyAttrs()
 
     def iterValueIndexInfo(self):
@@ -548,8 +548,8 @@ class Catalog(persistent.Persistent):
                     self._add(relToken, added, data['name'], newTokens)
                     if added:
                         additions[data['name']] = added
-            for l in self._iterListeners():
-                l.relationModified(relToken, self, additions, removals)
+            for listener in self._iterListeners():
+                listener.relationModified(relToken, self, additions, removals)
         else:
             # new token
             for value_index_info in self._attrs.values():
@@ -557,8 +557,8 @@ class Catalog(persistent.Persistent):
                     relToken, rel, value_index_info)
             self._relTokens.insert(relToken)
             self._relLength.change(1)
-            for l in self._iterListeners():
-                l.relationAdded(relToken, self, additions)
+            for listener in self._iterListeners():
+                listener.relationAdded(relToken, self, additions)
 
     def unindex(self, rel):
         self.unindex_doc(self._relTools['dump'](rel, self, {}))
@@ -574,8 +574,8 @@ class Catalog(persistent.Persistent):
                 self._remove(relToken, tokens, value_index_info['name'])
             self._relTokens.remove(relToken)
             self._relLength.change(-1)
-        for l in self._iterListeners():
-            l.relationRemoved(relToken, self, removals)
+        for listener in self._iterListeners():
+            listener.relationRemoved(relToken, self, removals)
 
     # Indexing Values
     # ---------------
@@ -825,8 +825,8 @@ class Catalog(persistent.Persistent):
         for ix, keys in self._searchIndexes:
             yield ix
         # then tell others
-        for l in self.iterListeners():
-            yield l
+        for listener in self.iterListeners():
+            yield listener
 
     def _getQueryFactory(self, query, queryFactory):
         res = None
