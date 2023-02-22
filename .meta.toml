@@ -1,0 +1,26 @@
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/zope-product
+[meta]
+template = "zope-product"
+commit-id = "46a3f93f"
+
+[python]
+with-sphinx-doctests = false
+with-future-python = false
+with-pypy = false
+with-macos = false
+with-windows = false
+
+[tox]
+use-flake8 = true
+additional-envlist = [
+    "py27",
+    ]
+
+[coverage]
+fail-under = 0
+
+[github-actions]
+additional-config = [
+    "- [\"2.7\",   \"py27\"]",
+    ]
