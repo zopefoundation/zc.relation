@@ -1,6 +1,6 @@
 <!--
 Generated from:
-https://github.com/zopefoundation/meta/tree/master/config/zope-product
+https://github.com/zopefoundation/meta/tree/master/config/pure-python
 --> 
 # Contributing to zopefoundation projects
 

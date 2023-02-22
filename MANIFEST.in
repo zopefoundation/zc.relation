@@ -1,5 +1,5 @@
 # Generated from:
-# https://github.com/zopefoundation/meta/tree/master/config/zope-product
+# https://github.com/zopefoundation/meta/tree/master/config/pure-python
 include *.md
 include *.rst
 include *.txt
