@@ -16,6 +16,9 @@ use-flake8 = true
 additional-envlist = [
     "py27",
     ]
+testenv-additional = [
+    "allowlist_externals =",
+    ]
 
 [coverage]
 fail-under = 0
