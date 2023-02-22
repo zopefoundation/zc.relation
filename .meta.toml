@@ -24,3 +24,6 @@ fail-under = 0
 additional-config = [
     "- [\"2.7\",   \"py27\"]",
     ]
+additional-install = [
+    "pip install -U \"tox < 4",
+    ]
