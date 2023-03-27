@@ -12,15 +12,13 @@
 #
 ##############################################################################
 from __future__ import print_function
-
-import os
-
 from setuptools import find_packages
 from setuptools import setup
 
 
 def read(path):
     """Read the contents of a file system path."""
+    import os
     with open(os.path.join(*path.split('/'))) as f:
         return f.read()
 
@@ -48,8 +46,11 @@ setup(
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: Implementation :: CPython',
         'License :: OSI Approved :: Zope Public License',
     ],

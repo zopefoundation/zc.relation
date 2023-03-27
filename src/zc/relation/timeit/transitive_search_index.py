@@ -182,8 +182,8 @@ in tokens.rst?)
 
 """  # noqa
 
-import timeit
 import pprint
+import timeit
 
 # see zc/relation/searchindex.rst
 

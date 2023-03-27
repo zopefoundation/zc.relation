@@ -11,12 +11,12 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+import BTrees
 import copy
+import persistent
 
 import zope.interface
 
-import BTrees
-import persistent
 import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory

@@ -13,10 +13,11 @@
 ##############################################################################
 import BTrees
 import persistent
-import zc.relation.catalog
-import zc.relation.interfaces
+
 import zope.interface
 
+import zc.relation.catalog
+import zc.relation.interfaces
 
 ##############################################################################
 # a common case transitive queries factory

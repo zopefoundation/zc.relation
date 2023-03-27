@@ -11,19 +11,19 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
+import BTrees
+import BTrees.check
+import BTrees.Length
 import copy
+import persistent
+import persistent.list
+import persistent.wref
+import six
 import sys
 
 import zope.interface
 import zope.interface.interfaces
 
-import BTrees
-import BTrees.check
-import BTrees.Length
-import persistent
-import persistent.list
-import persistent.wref
-import six
 from zc.relation import interfaces
 
 ##############################################################################
