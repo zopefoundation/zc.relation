@@ -40,6 +40,8 @@ RELATION = None
 # helpers
 #
 
+_marker = object()
+
 
 def multiunion(sets, data):
     sets = tuple(s for s in sets if s)  # bool is appropriate here
@@ -917,9 +919,8 @@ class Catalog(persistent.Persistent):
             stack.append(((), iter(d)))
         while stack:
             tokenChain, relDataIter = stack[0]
-            try:
-                relToken = next(relDataIter)
-            except StopIteration:
+            relToken = next(relDataIter, _marker)
+            if relToken is _marker:
                 stack.pop(0)
             else:
                 tokenChain += (relToken,)
@@ -1177,13 +1178,13 @@ class Catalog(persistent.Persistent):
         if getQueries is None:
             queryFactory, getQueries = self._getQueryFactory(
                 query, queryFactory)
-        try:
-            next(self.yieldRelationTokenChains(
+
+        _ = next(self.yieldRelationTokenChains(
                 *self._parse(
                     query, maxDepth, filter, targetQuery,
                     targetFilter, getQueries) +
-                (False,)))
-        except StopIteration:
+                (False,)), _marker)
+        if _ is _marker:
             return False
         else:
             return True
