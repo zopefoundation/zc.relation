@@ -13,14 +13,15 @@
 ##############################################################################
 import copy
 
-import zope.interface
-
 import BTrees
 import persistent
+import zope.interface
+
 import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory
 import zc.relation.searchindex
+
 
 ##############################################################################
 # common case search indexes

@@ -48,8 +48,9 @@ most sense to order them that way:
 intersect(intersect(small, medium), large)
 """
 
-import timeit
 import pprint
+import timeit
+
 
 setup = '''
 import BTrees

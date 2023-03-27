@@ -13,9 +13,10 @@
 ##############################################################################
 import BTrees
 import persistent
+import zope.interface
+
 import zc.relation.catalog
 import zc.relation.interfaces
-import zope.interface
 
 
 ##############################################################################
