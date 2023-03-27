@@ -14,8 +14,7 @@
 import copy
 import sys
 
-import zope.interface
-import zope.interface.interfaces
+import six
 
 import BTrees
 import BTrees.check
@@ -23,8 +22,11 @@ import BTrees.Length
 import persistent
 import persistent.list
 import persistent.wref
-import six
+import zope.interface
+import zope.interface.interfaces
+
 from zc.relation import interfaces
+
 
 ##############################################################################
 # constants

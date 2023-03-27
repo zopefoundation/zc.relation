@@ -54,6 +54,7 @@ if len_removal < 5 or ratio <= .1 or len_set > 500 and ration <= .2:
 
 import timeit
 
+
 setup = '''
 import BTrees
 one = BTrees.family32.IO.TreeSet((0,))
