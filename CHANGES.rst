@@ -3,7 +3,7 @@ Changes
 =======
 
 
-1.2 (unreleased)
+1.2 (2023-03-28)
 ================
 
 - Adapt code for PEP-479 (Change StopIteration handling inside generators).
