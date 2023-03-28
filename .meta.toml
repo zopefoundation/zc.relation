@@ -21,9 +21,6 @@ additional-rules = [
 
 [tox]
 use-flake8 = true
-additional-envlist = [
-    "py27",
-    ]
 testenv-additional = [
     "allowlist_externals =",
     ]
@@ -33,12 +30,9 @@ testenv-deps = [
     ]
 
 [coverage]
-fail-under = 0
+fail-under = 91.68
 
 [github-actions]
-additional-config = [
-    "- [\"2.7\",   \"py27\"]",
-    ]
 additional-install = [
     "pip install -U \"tox < 4\"",
     ]
