@@ -34,7 +34,7 @@ setup(
     namespace_packages=['zc'],
     zip_safe=False,
     author='Gary Poster',
-    author_email='gary@zope.com',
+    author_email='zope-dev@zope.dev',
     url="https://github.com/zopefoundation/zc.relation",
     description="Index intransitive and transitive n-ary relationships.",
     long_description="\n\n".join([
@@ -42,7 +42,7 @@ setup(
         read('src/zc/relation/tokens.rst'),
         read('src/zc/relation/searchindex.rst'),
         read('src/zc/relation/optimization.rst'),
-        read('src/zc/relation/CHANGES.rst'),
+        read('CHANGES.rst'),
     ]),
     classifiers=[
         'Programming Language :: Python :: 2',
