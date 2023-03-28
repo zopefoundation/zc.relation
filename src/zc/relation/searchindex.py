@@ -13,14 +13,15 @@
 ##############################################################################
 import copy
 
-import zope.interface
-
 import BTrees
 import persistent
+import zope.interface
+
 import zc.relation.catalog
 import zc.relation.interfaces
 import zc.relation.queryfactory
 import zc.relation.searchindex
+
 
 ##############################################################################
 # common case search indexes
@@ -437,19 +438,24 @@ class Intransitive(persistent.Persistent):
         for name in self.names:
             src = source[name]
             iterator = iter(src)
-            value = next(iterator)  # should always have at least one
+            value = next(iterator, _marker)  # should always have at least one
+            if value is _marker:
+                return
             vals.append([name, value, iterator, src])
         while 1:
             yield BTrees.family32.OO.Bucket(
                 [(name, value) for name, value, iterator, src in vals])
             for s in vals:
                 name, value, iterator, src = s
-                try:
-                    s[1] = next(iterator)
-                except StopIteration:
+                _ = next(iterator, _marker)
+                if _ is _marker:
                     iterator = s[2] = iter(src)
-                    s[1] = next(iterator)
+                    _ = next(iterator, _marker)
+                    if _ is _marker:
+                        return
+                    s[1] = _
                 else:
+                    s[1] = _
                     break
             else:
                 break

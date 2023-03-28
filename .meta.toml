@@ -1,0 +1,44 @@
+# Generated from:
+# https://github.com/zopefoundation/meta/tree/master/config/pure-python
+[meta]
+template = "pure-python"
+commit-id = "66322213"
+
+[python]
+with-sphinx-doctests = false
+with-future-python = false
+with-pypy = false
+with-macos = false
+with-windows = false
+
+[isort]
+known_third_party = "six, docutils, pkg_resources, pytz"
+
+[manifest]
+additional-rules = [
+    "recursive-include src *.rst",
+    ]
+
+[tox]
+use-flake8 = true
+additional-envlist = [
+    "py27",
+    ]
+testenv-additional = [
+    "allowlist_externals =",
+    ]
+testenv-deps = [
+    "zope.testrunner",
+    "py27: mock",
+    ]
+
+[coverage]
+fail-under = 0
+
+[github-actions]
+additional-config = [
+    "- [\"2.7\",   \"py27\"]",
+    ]
+additional-install = [
+    "pip install -U \"tox < 4\"",
+    ]

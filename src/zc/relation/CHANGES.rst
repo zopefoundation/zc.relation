@@ -6,7 +6,10 @@ Changes
 1.2 (unreleased)
 ================
 
-- Nothing changed yet.
+- Adapt code for PEP-479 (Change StopIteration handling inside generators).
+  See: https://peps.python.org/pep-0479.
+  Fixes #11.
+  [ale-rt]
 
 
 1.1.post2 (2018-06-18)
