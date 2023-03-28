@@ -76,17 +76,17 @@ d = [('control_result', control_result)]
 for i, big in enumerate(options):
     for little in options[:i]:
         d.append((
-            'manual %s %s' % (little, big),
+            'manual {} {}'.format(little, big),
             min(timeit.Timer(
                 manual_template % (little, big),
                 setup).repeat(3, runs)) - control_result))
         d.append((
-            'intersect %s %s' % (little, big),
+            'intersect {} {}'.format(little, big),
             min(timeit.Timer(
                 intersect_template % (little, big),
                 setup).repeat(3, runs)) - control_result))
         d.append((
-            'intersect %s %s' % (big, little),
+            'intersect {} {}'.format(big, little),
             min(timeit.Timer(
                 intersect_template % (big, little),
                 setup).repeat(3, runs)) - control_result))

@@ -6,7 +6,8 @@ Changes
 2.0 (unreleased)
 ================
 
-- Nothing changed yet.
+- Drop support for Python 2.7, 3.5, 3.6.
+  [ale-rt]
 
 
 1.2 (2023-03-28)
