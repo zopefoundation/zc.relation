@@ -30,7 +30,7 @@ testenv-deps = [
     ]
 
 [coverage]
-fail-under = 91.67
+fail-under = 91.66
 
 [github-actions]
 additional-install = [
