@@ -27,7 +27,7 @@ def read(path):
 
 setup(
     name="zc.relation",
-    version='1.2',
+    version='1.3.dev0',
     packages=find_packages('src'),
     include_package_data=True,
     package_dir={'': 'src'},
