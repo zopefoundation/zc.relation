@@ -57,7 +57,7 @@ setup(
     keywords="zope zope3 relation",
     python_requires='>=3.7',
     install_requires=[
-        'ZODB3 >= 3.8dev',
+        'BTrees',
         'zope.interface',
         'setuptools',
         'six',
