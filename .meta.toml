@@ -31,8 +31,3 @@ testenv-deps = [
 
 [coverage]
 fail-under = 91.66
-
-[github-actions]
-additional-install = [
-    "pip install -U \"tox < 4\"",
-    ]
