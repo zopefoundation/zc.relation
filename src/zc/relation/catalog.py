@@ -1182,10 +1182,10 @@ class Catalog(persistent.Persistent):
                 query, queryFactory)
 
         _ = next(self.yieldRelationTokenChains(
-                *self._parse(
-                    query, maxDepth, filter, targetQuery,
-                    targetFilter, getQueries) +
-                (False,)), _marker)
+            *self._parse(
+                query, maxDepth, filter, targetQuery,
+                targetFilter, getQueries) +
+            (False,)), _marker)
         if _ is _marker:
             return False
         else:
