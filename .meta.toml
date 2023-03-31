@@ -12,7 +12,7 @@ with-macos = false
 with-windows = false
 
 [isort]
-known_third_party = "six, docutils, pkg_resources, pytz"
+known_third_party = "docutils, pkg_resources, pytz"
 
 [manifest]
 additional-rules = [

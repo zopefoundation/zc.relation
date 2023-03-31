@@ -104,7 +104,6 @@ object, similar to an intid utility. [#faux_intid]_
 
     >>> import persistent
     >>> import BTrees
-    >>> import six
     >>> class Registry(persistent.Persistent): # see zope.app.intid
     ...     def __init__(self, family=BTrees.family32):
     ...         self.family = family
@@ -138,7 +137,7 @@ object, similar to an intid utility. [#faux_intid]_
     ...         else:
     ...             return res.object
     ...     def remove(self, r):
-    ...         if isinstance(r, six.integer_types):
+    ...         if isinstance(r, int):
     ...             self.refs.pop(self.ids.pop(r))
     ...         elif (not isinstance(r, persistent.Persistent) or
     ...               r._p_oid is None):

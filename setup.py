@@ -60,7 +60,6 @@ setup(
         'BTrees',
         'zope.interface',
         'setuptools',
-        'six',
         'zope.testing',
     ],
     extras_require={'test': [
