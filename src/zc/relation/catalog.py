@@ -14,8 +14,6 @@
 import copy
 import sys
 
-import six
-
 import BTrees
 import BTrees.check
 import BTrees.Length
@@ -59,10 +57,10 @@ def multiunion(sets, data):
 
 
 def getModuleTools(module):
-    return dict(
-        (nm, getattr(module, nm, None)) for nm in
+    return {
+        nm: getattr(module, nm, None) for nm in
         ('BTree', 'TreeSet', 'Bucket', 'Set',
-         'intersection', 'multiunion', 'union', 'difference'))
+         'intersection', 'multiunion', 'union', 'difference')}
 
 
 def getMapping(tools):
@@ -95,7 +93,7 @@ def createRef(ob):
 #
 
 
-class Any(object):
+class Any:
     def __init__(self, source):
         self.source = frozenset(source)
 
@@ -110,7 +108,7 @@ class Any(object):
         return not self.__eq__(other)
 
     def __repr__(self):
-        return '<%s.%s instance %r>' % (
+        return '<{}.{} instance {!r}>'.format(
             self.__class__.__module__, self.__class__.__name__,
             tuple(sorted(self.source)))
 
@@ -127,12 +125,12 @@ def any(*args):
 class CircularRelationPath(tuple):
 
     def __new__(cls, elements, cycled):
-        res = super(CircularRelationPath, cls).__new__(cls, elements)
+        res = super().__new__(cls, elements)
         res.cycled = cycled
         return res
 
     def __repr__(self):
-        return 'cycle%s' % super(CircularRelationPath, self).__repr__()
+        return 'cycle%s' % super().__repr__()
 
 ##############################################################################
 # the relation catalog
@@ -829,8 +827,7 @@ class Catalog(persistent.Persistent):
         for ix, keys in self._searchIndexes:
             yield ix
         # then tell others
-        for listener in self.iterListeners():
-            yield listener
+        yield from self.iterListeners()
 
     def _getQueryFactory(self, query, queryFactory):
         res = None
@@ -852,7 +849,7 @@ class Catalog(persistent.Persistent):
                     'internal error: parse expects query and targetQuery '
                     'to already be normalized (to OO.Bucket.')
         if maxDepth is not None and (
-                not isinstance(maxDepth, six.integer_types) or maxDepth < 1):
+                not isinstance(maxDepth, int) or maxDepth < 1):
             raise ValueError('maxDepth must be None or a positive integer')
         if getQueries is not None:
             queries = getQueries(())

@@ -11,7 +11,6 @@
 # FOR A PARTICULAR PURPOSE.
 #
 ##############################################################################
-from __future__ import print_function
 
 import os
 
@@ -27,7 +26,7 @@ def read(path):
 
 setup(
     name="zc.relation",
-    version='1.3.dev0',
+    version='2.0.dev0',
     packages=find_packages('src'),
     include_package_data=True,
     package_dir={'': 'src'},
@@ -45,8 +44,6 @@ setup(
         read('CHANGES.rst'),
     ]),
     classifiers=[
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
@@ -58,13 +55,16 @@ setup(
     ],
     license='ZPL 2.1',
     keywords="zope zope3 relation",
-    python_requires='>=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,!=3.6.*',  # noqa: E501
+    python_requires='>=3.7',
     install_requires=[
-        'ZODB3 >= 3.8dev',
+        'BTrees',
         'zope.interface',
         'setuptools',
         'six',
         'zope.testing',
     ],
-    extras_require={'test': 'zc.relationship >= 2'},
+    extras_require={'test': [
+        'zc.relationship >= 2',
+        'ZODB'
+    ]},
 )

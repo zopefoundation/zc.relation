@@ -294,11 +294,11 @@ for template in (relations_run_template, value_run_template,
         canfind = template == canfind_run_template
         if not canfind:
             brute.sort()
-        assert brute == relation == value, '%s: %r, %r, %r' % (
+        assert brute == relation == value, '{}: {!r}, {!r}, {!r}'.format(
             run, brute, relation, value)
         # end verify
-        d.append('**** %s ****' % (run.strip(),))
-        d.append('**** %s ****' % (brute,))
+        d.append('**** {} ****'.format(run.strip()))
+        d.append('**** {} ****'.format(brute))
         if not canfind:
             # show how long it takes to make the generator
             altered = run.replace('list(', '', 1)
@@ -350,7 +350,7 @@ d = [('control_result', control_result)]
 for template in (relations_run_template, value_run_template):
     for o in (9, 0):
         run = template % (o,)
-        d.append('**** %s ****' % (run.strip(),))
+        d.append('**** {} ****'.format(run.strip()))
         d.append((
             'brute',
             min(timeit.Timer(
