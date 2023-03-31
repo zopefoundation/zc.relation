@@ -116,9 +116,7 @@ Without a transitive search index, we can get all transitive results.
 The results are iterators.
 
     >>> res = catalog.findRelationTokens({'token': 0})
-    >>> import six
-    >>> next_attr = '__next__' if six.PY3 else 'next'
-    >>> getattr(res, next_attr) is None
+    >>> getattr(res, '__next__') is None
     False
     >>> getattr(res, '__len__', None) is None
     True
