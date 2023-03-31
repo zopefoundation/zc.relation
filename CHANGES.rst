@@ -3,10 +3,15 @@ Changes
 =======
 
 
-1.3 (unreleased)
+2.0 (unreleased)
 ================
 
-- Nothing changed yet.
+- Drop support for Python 2.7, 3.5, 3.6.
+  [ale-rt]
+
+- Fix the dependency on the ZODB, we just need to depend on the BTrees package.
+  Refs. #11.
+  [ale-rt]
 
 
 1.2 (2023-03-28)

@@ -128,7 +128,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
         return res
 
     def _index(self, token, removals=None, remove=False):
-        starts = set((token,))
+        starts = {token}
         if removals and self.forward in removals:
             starts.update(t for t in removals[self.forward] if t is not None)
         tokens = set()
@@ -158,7 +158,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
         for token in tokens:
             if token in self.index:  # must have filled it in during a cycle
                 continue
-            stack = [[token, None, set(), [], set((token,)), False]]
+            stack = [[token, None, set(), [], {token}, False]]
             while stack:
                 token, child, sets, empty, traversed_tokens, cycled = stack[-1]
                 if not sets:
@@ -204,7 +204,7 @@ class TransposingTransitiveMembership(persistent.Persistent):
                     # Walk down, passing token.
                     _next = empty.pop()
                     stack.append(
-                        [_next, None, set(), [], set((_next,)), False])
+                        [_next, None, set(), [], {_next}, False])
                 else:
                     stack.pop()
                     assert stack or not cycled, (
@@ -373,9 +373,9 @@ class Intransitive(persistent.Persistent):
     def sourceAdded(self, catalog):
         queries = set()
         for token in catalog.getRelationTokens():
-            additions = dict(
-                (info['name'], catalog.getValueTokens(info['name'], token))
-                for info in catalog.iterValueIndexInfo())
+            additions = {
+                info['name']: catalog.getValueTokens(info['name'], token)
+                for info in catalog.iterValueIndexInfo()}
             queries.update(
                 tuple(q.items()) for q in
                 self.getQueries(token, catalog, additions, {}, False))
@@ -387,9 +387,9 @@ class Intransitive(persistent.Persistent):
         # changed
         queries = set()
         for token in catalog.getRelationTokens():
-            removals = dict(
-                (info['name'], catalog.getValueTokens(info['name'], token))
-                for info in catalog.iterValueIndexInfo())
+            removals = {
+                info['name']: catalog.getValueTokens(info['name'], token)
+                for info in catalog.iterValueIndexInfo()}
             queries.update(
                 tuple(q.items()) for q in
                 self.getQueries(token, catalog, {}, removals, True))
@@ -429,7 +429,7 @@ class Intransitive(persistent.Persistent):
             if res is None:
                 if name in source:
                     continue
-                res = set((None,))
+                res = {None}
                 current = self.catalog.getValueTokens(name, token)
                 if current:
                     res.update(current)
