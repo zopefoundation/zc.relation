@@ -867,11 +867,11 @@ class Catalog(persistent.Persistent):
         else:
             checkFilter = None
         targetCache = {}
-        checkTargetFilter = None
         if targetQuery:
             targetData = self._relData(targetQuery)
             if not targetData:
                 relData = ()  # shortcut
+                checkTargetFilter = None
             else:
                 if targetFilter is not None:
                     def checkTargetFilter(relchain, query):
@@ -883,6 +883,8 @@ class Catalog(persistent.Persistent):
         elif targetFilter is not None:
             def checkTargetFilter(relchain, query):
                 return targetFilter(relchain, query, self, targetCache)
+        else:
+            checkTargetFilter = None
         return (query, relData, maxDepth, checkFilter, checkTargetFilter,
                 getQueries)
 
