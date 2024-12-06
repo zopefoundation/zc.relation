@@ -297,8 +297,8 @@ for template in (relations_run_template, value_run_template,
         assert brute == relation == value, '{}: {!r}, {!r}, {!r}'.format(
             run, brute, relation, value)
         # end verify
-        d.append('**** {} ****'.format(run.strip()))
-        d.append('**** {} ****'.format(brute))
+        d.append(f'**** {run.strip()} ****')
+        d.append(f'**** {brute} ****')
         if not canfind:
             # show how long it takes to make the generator
             altered = run.replace('list(', '', 1)
@@ -350,7 +350,7 @@ d = [('control_result', control_result)]
 for template in (relations_run_template, value_run_template):
     for o in (9, 0):
         run = template % (o,)
-        d.append('**** {} ****'.format(run.strip()))
+        d.append(f'**** {run.strip()} ****')
         d.append((
             'brute',
             min(timeit.Timer(
