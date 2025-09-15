@@ -45,7 +45,6 @@ setup(
     ]),
     classifiers=[
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3.9',
         'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3.11',
@@ -54,9 +53,9 @@ setup(
         'Programming Language :: Python :: Implementation :: CPython',
         'License :: OSI Approved :: Zope Public License',
     ],
-    license='ZPL 2.1',
+    license='ZPL-2.1',
     keywords="zope zope3 relation",
-    python_requires='>=3.8',
+    python_requires='>=3.9',
     install_requires=[
         'BTrees',
         'zope.interface',
